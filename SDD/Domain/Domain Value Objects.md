@@ -1,70 +1,34 @@
-# Comprehensive Domain Value Objects Specification
+# Comprehensive Domain Value Objects & Enums Specification
 
-Value Objects (VOs) in NexusMarket are **immutable**, **self-validating** domain representations defined by value equality rather than conceptual identity.
-
----
-
-## 1. Shared Value Objects (`com.nexusmarket.domain.model.common`)
-
-### A. [`Money`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/com/nexusmarket/domain/model/common/Money.java)
-- **Purpose**: Represents prices, cart totals, invoice values, line item subtotals, and refund amounts.
-- **Fields**: `BigDecimal amount`, `Currency currency`.
-- **Invariants**: $amount \ge 0$. Scale fixed at 2 decimal places (`RoundingMode.HALF_UP`).
-- **Arithmetic Methods**:
-  - `add(Money other)`: Returns new `Money` with summed amounts. Checks matching currency.
-  - `subtract(Money other)`: Returns new `Money` with subtracted amounts. Checks matching currency and non-negative result.
-  - `multiply(int factor)`: Returns new `Money` scaled by integer factor.
-  - `isGreaterThan(Money other)`: Compares monetary values.
-  - `isZero()`: Returns true if amount is 0.00.
-
-### B. [`Address`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/com/nexusmarket/domain/model/common/Address.java)
-- **Purpose**: Physical addresses for buyers, sellers, warehouses, billing, and shipments.
-- **Fields**: `street`, `city`, `state`, `postalCode`, `country`.
-- **Invariants**: Street and city cannot be null or empty string. Default country is "USA".
-
-### C. [`Email`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/com/nexusmarket/domain/model/common/Email.java)
-- **Purpose**: Validated email address format across users, buyers, and sellers.
-- **Fields**: `String value`.
-- **Invariants**: Lowercase normalized, non-null, non-empty, contains `@` character, does not start or end with `@`.
-
-### D. [`SKU`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/com/nexusmarket/domain/model/common/SKU.java)
-- **Purpose**: Stock Keeping Unit identification for catalog items.
-- **Fields**: `String code`.
-- **Invariants**: Non-null, uppercase normalized.
-
-### E. [`TaxIdentifier`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/com/nexusmarket/domain/model/common/TaxIdentifier.java)
-- **Purpose**: Merchant corporate tax numbers (e.g. RUC, RFC, EIN, VAT).
-- **Fields**: `String taxId`.
-- **Invariants**: Non-null, non-empty, uppercase normalized.
+Value Objects and Enums are organized into package `application.domain.valueobjects` and package `application.domain.enums`.
 
 ---
 
-## 2. Bounded Context Specific Value Objects
+## 1. Package: `application.domain.valueobjects`
 
-### A. [`StockQuantity`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/com/nexusmarket/domain/model/inventory/StockQuantity.java) (`inventory`)
-- **Purpose**: Inventory stock counts for available, reserved, and damaged units.
-- **Fields**: `int value`.
-- **Invariants**: $value \ge 0$. Subtracting more than available throws `IllegalArgumentException`.
-- **Operations**: `add(int delta)`, `subtract(int delta)`, `isZero()`.
+All non-enum Value Objects feature default and overloaded constructors, getters, setters, and self-validation.
 
-### B. [`ProductVariant`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/com/nexusmarket/domain/model/catalog/ProductVariant.java) (`catalog`)
-- **Purpose**: Option variants for physical products.
-- **Fields**: `String name` (e.g. "Color"), `String value` (e.g. "Red").
-- **Invariants**: Name and value cannot be null or empty.
+- **[`Money`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/valueobjects/Money.java)**: `amount` (BigDecimal $\ge 0$), `currency` (Currency). Getters, setters, `add()`, `subtract()`, `multiply()`.
+- **[`Address`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/valueobjects/Address.java)**: `street`, `city`, `state`, `postalCode`, `country`. Getters and setters.
+- **[`Email`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/valueobjects/Email.java)**: `value` (RFC format validation). Getter and setter.
+- **[`SKU`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/valueobjects/SKU.java)**: `code` (Stock Keeping Unit). Getter and setter.
+- **[`TaxIdentifier`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/valueobjects/TaxIdentifier.java)**: `taxId` (Corporate tax identifier). Getter and setter.
+- **[`StockQuantity`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/valueobjects/StockQuantity.java)**: `value` (Integer quantity $\ge 0$). Getter and setter.
+- **[`ProductVariant`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/valueobjects/ProductVariant.java)**: `name`, `value` pair. Getters and setters.
 
 ---
 
-## 3. Enumerated Value Objects (Enums)
+## 2. Package: `application.domain.enums`
 
-1. **`UserRole`**: `BUYER`, `SELLER`, `OPERATOR_LOGISTIC`, `ADMIN`, `SUPERVISOR`.
-2. **`UserStatus`**: `ACTIVE`, `BLOCKED`, `PENDING_INCORPORATION`.
-3. **`WarehouseType`**: `MARKETPLACE`, `SELLER`.
-4. **`ProductType`**: `PHYSICAL`, `DIGITAL`.
-5. **`ProductStatus`**: `DRAFT`, `PUBLISHED`, `SUSPENDED`, `DISCONTINUED`.
-6. **`InventoryMovementType`**: `INFLOW`, `RESERVE`, `OUTFLOW_SALE`, `ADJUSTMENT`, `RETURN`.
-7. **`OrderStatus`**: `CART`, `PENDING_PAYMENT`, `PAID`, `DISPATCHED`, `DELIVERED_FINALIZED`, `CANCELLED`.
-8. **`InvoiceStatus`**: `ISSUED`, `PAID`, `CANCELLED`.
-9. **`ShipmentStatus`**: `PREPARING`, `IN_TRANSIT`, `DELIVERED`, `FAILED`.
-10. **`ReturnReason`**: `DAMAGED`, `WRONG_ITEM`, `DEFECTIVE`, `CUSTOMER_REGRET`.
-11. **`ReturnStatus`**: `REQUESTED`, `APPROVED`, `REJECTED`, `ITEM_RECEIVED`.
-12. **`RefundStatus`**: `PENDING`, `PROCESSED`, `FAILED`.
+- **`UserRole`**: `BUYER`, `SELLER`, `OPERATOR_LOGISTIC`, `ADMIN`, `SUPERVISOR`.
+- **`UserStatus`**: `ACTIVE`, `BLOCKED`, `PENDING_INCORPORATION`.
+- **`WarehouseType`**: `MARKETPLACE`, `SELLER`.
+- **`ProductType`**: `PHYSICAL`, `DIGITAL`.
+- **`ProductStatus`**: `DRAFT`, `PUBLISHED`, `SUSPENDED`, `DISCONTINUED`.
+- **`InventoryMovementType`**: `INFLOW`, `RESERVE`, `OUTFLOW_SALE`, `ADJUSTMENT`, `RETURN`.
+- **`OrderStatus`**: `CART`, `PENDING_PAYMENT`, `PAID`, `DISPATCHED`, `DELIVERED_FINALIZED`, `CANCELLED`.
+- **`InvoiceStatus`**: `ISSUED`, `PAID`, `CANCELLED`.
+- **`ShipmentStatus`**: `PREPARING`, `IN_TRANSIT`, `DELIVERED`, `FAILED`.
+- **`ReturnReason`**: `DAMAGED`, `WRONG_ITEM`, `DEFECTIVE`, `CUSTOMER_REGRET`.
+- **`ReturnStatus`**: `REQUESTED`, `APPROVED`, `REJECTED`, `ITEM_RECEIVED`.
+- **`RefundStatus`**: `PENDING`, `PROCESSED`, `FAILED`.
