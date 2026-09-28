@@ -71,4 +71,9 @@ public class DomainServicesConfig {
     public AuthorizationService authorizationService() {
         return new AuthorizationService();
     }
+
+    @Bean
+    public CartManagementService cartManagementService(OrderRepositoryPort orderRepositoryPort) {
+        return new CartManagementService(orderRepositoryPort);
+    }
 }

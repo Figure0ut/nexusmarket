@@ -22,9 +22,10 @@ class NexusmarketApplicationTests {
     @Autowired private ReturnRefundService returnRefundService;
     @Autowired private OperationAuditService operationAuditService;
     @Autowired private AuthorizationService authorizationService;
+    @Autowired private CartManagementService cartManagementService;
 
     @Test
-    @DisplayName("Verify Spring Boot context successfully injects all 11 pure domain services as beans")
+    @DisplayName("Verify Spring Boot context successfully injects all 12 pure domain services as beans")
     void contextLoadsAndServicesAreInjected() {
         assertNotNull(userAuthenticationService);
         assertNotNull(sellerIncorporationService);
@@ -37,5 +38,6 @@ class NexusmarketApplicationTests {
         assertNotNull(returnRefundService);
         assertNotNull(operationAuditService);
         assertNotNull(authorizationService);
+        assertNotNull(cartManagementService);
     }
 }

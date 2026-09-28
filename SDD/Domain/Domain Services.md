@@ -56,3 +56,7 @@ Domain Services in NexusMarket implement business logic and workflows that cross
 
 ### 11. `AuthorizationService` ([Spec](./services/authorization-services.md))
 - **Role**: Enforces platform-wide quality controls, operational role constraints (RG-01, RG-02, RG-03), and the formal **Responsibility Matrix** (Section 12).
+
+### 12. `CartManagementService` ([Spec](./services/cart-management-services.md))
+- **Role**: Governs shopping cart operations prior to checkout, including auto-provisioning carts, adding items with quantity accumulation, item removal, and clearing carts.
+
