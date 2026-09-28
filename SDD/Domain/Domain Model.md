@@ -49,3 +49,7 @@ This specification documents the complete Domain Entities & Aggregate Roots loca
 ### 11. `ReturnRequest` & `Refund`
 - **Fields**: `returnId`, `orderId`, `buyerId`, `productId`, `reason` ([`ReturnReason`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/enums/ReturnReason.java)), `status` ([`ReturnStatus`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/enums/ReturnStatus.java)), `refundId`, `amount`, `refundStatus` ([`RefundStatus`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/enums/RefundStatus.java)).
 - **Design**: Getters and setters, lifecycle approval and processing methods.
+
+### 12. `AuditEntry`
+- **Fields**: `entryId`, `actorId`, `role` ([`UserRole`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/enums/UserRole.java)), `action`, `targetAggregateId`, `timestamp`, `details`.
+- **Design**: Getters and setters, immutable event entry representation for audit logs.

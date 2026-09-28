@@ -1,14 +1,15 @@
 # User Authentication & Identification Domain Service Specification
 
 ## 1. Context & Business Purpose
-The **User Authentication Domain Service** establishes the identity foundation of NexusMarket (OBJ-01 & Dominio 1). It guarantees correct user identification, secure access control, credential verification, and single-role assignment across all platform interactions.
+The **`UserAuthenticationService`** establishes the identity foundation of NexusMarket (OBJ-01 & Dominio 1). It guarantees correct user identification, secure access control, credential verification, and status validation across all platform interactions.
 
 ---
 
-## 2. Domain Organizations & Package Location
-- **Package**: `com.nexusmarket.domain.service.user`
-- **Associated Aggregate Roots**: [`User`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/com/nexusmarket/domain/model/user/User.java), [`Buyer`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/com/nexusmarket/domain/model/user/Buyer.java), [`Seller`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/com/nexusmarket/domain/model/user/Seller.java)
-- **Associated Value Objects**: [`UserRole`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/com/nexusmarket/domain/model/user/UserRole.java), [`UserStatus`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/com/nexusmarket/domain/model/user/UserStatus.java), [`Email`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/com/nexusmarket/domain/model/common/Email.java)
+## 2. Package Location & Dependencies
+- **Package**: `application.domain.services`
+- **Class**: [`UserAuthenticationService`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/services/UserAuthenticationService.java)
+- **Dependencies**: [`UserRepositoryPort`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/ports/out/UserRepositoryPort.java)
+- **Associated Models**: [`User`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/models/User.java), [`Email`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/valueobjects/Email.java), [`UserRole`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/enums/UserRole.java), [`UserStatus`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/enums/UserStatus.java)
 
 ---
 
@@ -16,19 +17,15 @@ The **User Authentication Domain Service** establishes the identity foundation o
 
 1. **Unique Identity & Email Invariant (RG-11)**: No two users may share the same system `identifier` or `email` address.
 2. **Single Role Constraint (RG-02)**: Each user account is assigned exactly one role (`BUYER`, `SELLER`, `OPERATOR_LOGISTIC`, `ADMIN`, `SUPERVISOR`).
-3. **Role Authorization Scope (RG-03)**: Users are restricted from executing operations outside their defined role authority.
-4. **Active Account Requirement**: Operations require user status to be `ACTIVE`. Accounts marked as `BLOCKED` or `PENDING_INCORPORATION` are rejected.
+3. **Active Account Requirement**: Authentication requires user status to be `ACTIVE`. Accounts marked as `BLOCKED` or `PENDING_INCORPORATION` are rejected with `InvalidDomainStateException`.
 
 ---
 
-## 4. Key Constructor Validation & Logic Flow
+## 4. Method Signatures & Logic Flow
 
+```java
+public User authenticate(Email email);
+public User registerUser(User user);
+public void blockUser(String identifier);
+public void activateUser(String identifier);
 ```
-[ User Auth Request ] ──> Validate Email & ID Format ──> Check Account Status (ACTIVE) ──> Verify Role Authority
-```
-
-- Constructor & Factory Method Invariants:
-  - Validates `Email` using RFC rules upon instantiation.
-  - Ensures `fullName` is non-empty.
-  - Throws `IllegalArgumentException` on invalid user data.
-  - Throws `IllegalStateException` on unauthorized role operations.

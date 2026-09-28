@@ -1,38 +1,34 @@
 # Inventory Allocation Domain Service Specification
 
 ## 1. Context & Business Purpose
-The **Inventory Allocation Domain Service** controls multi-warehouse stock reservation, stock inflows, and inventory movements (OBJ-06 & Dominio 6).
+The **`InventoryAllocationService`** controls multi-warehouse stock reservation, stock inflows, and inventory movements (OBJ-06 & Dominio 6).
 
 ---
 
-## 2. Domain Organizations & Package Location
-- **Package**: `com.nexusmarket.domain.service.inventory`
-- **Associated Aggregate Roots**: [`Inventory`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/com/nexusmarket/domain/model/inventory/Inventory.java), [`Warehouse`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/com/nexusmarket/domain/model/warehouse/Warehouse.java)
-- **Associated Value Objects**: [`StockQuantity`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/com/nexusmarket/domain/model/inventory/StockQuantity.java), [`InventoryMovementType`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/com/nexusmarket/domain/model/inventory/InventoryMovementType.java)
+## 2. Package Location & Dependencies
+- **Package**: `application.domain.services`
+- **Class**: [`InventoryAllocationService`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/services/InventoryAllocationService.java)
+- **Dependencies**: [`InventoryRepositoryPort`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/ports/out/InventoryRepositoryPort.java), [`WarehouseRepositoryPort`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/ports/out/WarehouseRepositoryPort.java)
+- **Associated Models**: [`Inventory`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/models/Inventory.java), [`Warehouse`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/models/Warehouse.java), [`StockQuantity`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/valueobjects/StockQuantity.java)
 
 ---
 
 ## 3. Core Business Invariants & Rules
 
 1. **Zero Negative Stock Rule**: Negative stock quantities are strictly forbidden under any circumstances.
-2. **Damaged / Non-Existent Stock Prohibition**: Stock marked as damaged or non-existent cannot be reserved or sold (Validaciones Críticas 11).
-3. **Movement Tracking**:
-   - `INFLOW`: Increases `availableStock`.
-   - `RESERVE`: Transfers units from `availableStock` to `reservedStock`.
-   - `OUTFLOW_SALE`: Deducts units from `reservedStock` upon checkout payment.
-   - `ADJUSTMENT`: Reconciles inventory stock count.
-   - `RETURN`: Adds inspected returned units back to stock.
+2. **Damaged / Inactive Warehouse Prohibition**: Stock cannot be allocated to inactive warehouses, nor reserved from damaged units (Validaciones Críticas 11).
+3. **Movements**: Inflow, reservation, sales confirmation, reservation release, and damaged stock tracking.
 
 ---
 
-## 4. Key Method Validation Logic
+## 4. Method Signatures
 
 ```java
-public void reserveStock(int quantity) {
-    if (this.availableStock.getValue() < quantity) {
-        throw new IllegalStateException("Insufficient available stock for reservation.");
-    }
-    this.availableStock = this.availableStock.subtract(quantity);
-    this.reservedStock = this.reservedStock.add(quantity);
-}
+public Inventory getInventory(String productId, String warehouseId);
+public void addStock(String inventoryId, String productId, String warehouseId, int quantity);
+public void reserveStock(String productId, String warehouseId, int quantity);
+public void releaseReservation(String productId, String warehouseId, int quantity);
+public void confirmSale(String productId, String warehouseId, int quantity);
+public void markStockAsDamaged(String productId, String warehouseId, int quantity);
+public int getTotalAvailableStock(String productId);
 ```

@@ -1,14 +1,15 @@
 # Seller Incorporation Domain Service Specification
 
 ## 1. Context & Business Purpose
-The **Seller Incorporation Domain Service** governs merchant onboarding and validation into NexusMarket (OBJ-02 & Dominio 3). 
+The **`SellerIncorporationService`** governs merchant onboarding and validation into NexusMarket (OBJ-02 & Dominio 3).
 
 ---
 
-## 2. Domain Organizations & Package Location
-- **Package**: `com.nexusmarket.domain.service.seller`
-- **Associated Aggregate Roots**: [`Seller`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/com/nexusmarket/domain/model/user/Seller.java), [`User`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/com/nexusmarket/domain/model/user/User.java)
-- **Associated Value Objects**: [`TaxIdentifier`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/com/nexusmarket/domain/model/common/TaxIdentifier.java), [`UserRole`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/com/nexusmarket/domain/model/user/UserRole.java), [`UserStatus`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/com/nexusmarket/domain/model/user/UserStatus.java)
+## 2. Package Location & Dependencies
+- **Package**: `application.domain.services`
+- **Class**: [`SellerIncorporationService`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/services/SellerIncorporationService.java)
+- **Dependencies**: [`UserRepositoryPort`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/ports/out/UserRepositoryPort.java)
+- **Associated Models**: [`Seller`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/models/Seller.java), [`User`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/models/User.java)
 
 ---
 
@@ -18,21 +19,13 @@ The **Seller Incorporation Domain Service** governs merchant onboarding and vali
 2. **Corporate Tax Validation**: The seller must provide a valid corporate `TaxIdentifier` and `corporateName`.
 3. **Status Lifecycle Transition**:
    - Initial state: `PENDING_INCORPORATION`
-   - State upon `incorporate(adminUser)` execution: `ACTIVE`
-4. **Already Incorporated Protection**: Re-incorporating an already `ACTIVE` seller throws `IllegalStateException`.
+   - State upon successful incorporation: `ACTIVE`
 
 ---
 
-## 4. Method Signatures & Logic Flow
+## 4. Method Signatures
 
 ```java
-public void incorporate(User adminUser) {
-    if (adminUser == null || adminUser.getRole() != UserRole.ADMIN) {
-        throw new IllegalStateException("Incorporation Failure: ADMIN role required.");
-    }
-    if (getStatus() == UserStatus.ACTIVE) {
-        throw new IllegalStateException("Seller is already incorporated.");
-    }
-    changeStatus(UserStatus.ACTIVE);
-}
+public void incorporateSeller(String sellerId, User adminUser);
+public void incorporateSeller(Seller seller, User adminUser);
 ```

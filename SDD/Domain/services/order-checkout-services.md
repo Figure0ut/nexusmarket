@@ -1,31 +1,31 @@
 # Order Checkout Domain Service Specification
 
 ## 1. Context & Business Purpose
-The **Order Checkout Domain Service** orchestrates shopping cart conversion into formal orders, total computation, and order state machine transitions (OBJ-07, OBJ-08 & Dominio 7).
+The **`OrderCheckoutService`** orchestrates shopping cart conversion into formal orders, total computation, and order state machine transitions (OBJ-07, OBJ-08 & Dominio 7).
 
 ---
 
-## 2. Domain Organizations & Package Location
-- **Package**: `com.nexusmarket.domain.service.order`
-- **Associated Aggregate Roots**: [`Cart`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/com/nexusmarket/domain/model/order/Cart.java), [`Order`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/com/nexusmarket/domain/model/order/Order.java)
-- **Associated Value Objects**: [`OrderStatus`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/com/nexusmarket/domain/model/order/OrderStatus.java), [`Money`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/com/nexusmarket/domain/model/common/Money.java), [`Address`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/com/nexusmarket/domain/model/common/Address.java)
+## 2. Package Location & Dependencies
+- **Package**: `application.domain.services`
+- **Class**: [`OrderCheckoutService`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/services/OrderCheckoutService.java)
+- **Dependencies**: [`OrderRepositoryPort`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/ports/out/OrderRepositoryPort.java), [`PaymentGatewayPort`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/ports/out/PaymentGatewayPort.java), [`NotificationPort`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/ports/out/NotificationPort.java)
+- **Associated Models**: [`Cart`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/models/Cart.java), [`Order`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/models/Order.java)
 
 ---
 
-## 3. Order Lifecycle State Machine
+## 3. Core Business Invariants & Rules
 
+1. **Empty Cart Prohibition**: Checkout cannot proceed if the buyer's cart is empty.
+2. **Order Lifecycle Transitions**:
+   - `CART` -> `PENDING_PAYMENT` -> `PAID` -> `DISPATCHED` -> `DELIVERED_FINALIZED`
+3. **Immutability of Finalized Orders**: Once delivered and finalized, orders cannot be cancelled or modified.
+
+---
+
+## 4. Method Signatures
+
+```java
+public Order checkoutCart(String buyerId, String orderId, Address shippingAddress);
+public boolean processOrderPayment(String orderId, String paymentToken, Email buyerEmail);
+public void cancelOrder(String orderId);
 ```
-[ CART ] ──(Submit)──> [ PENDING_PAYMENT ] ──(Payment Validated)──> [ PAID ] ──(Warehouse Dispatch)──> [ DISPATCHED ] ──(Delivery Confirmed)──> [ DELIVERED_FINALIZED ]
-                                 │
-                            (Cancel Order)
-                                 ▼
-                           [ CANCELLED ]
-```
-
----
-
-## 4. Core Business Invariants & Rules
-
-1. **Finalized Order Immutability (Validaciones Críticas 11)**: A finalized or delivered order (`DELIVERED_FINALIZED`) **cannot be modified or cancelled** under any circumstance.
-2. **Total Amount Calculation**: Total order amount is computed automatically as the sum of all line item subtotals (`unitPrice * quantity`).
-3. **Cart Item Rules**: Cart items require positive quantity ($quantity > 0$) and valid unit price.
