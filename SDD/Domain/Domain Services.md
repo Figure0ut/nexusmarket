@@ -25,81 +25,34 @@ Domain Services in NexusMarket implement business logic and workflows that cross
 ## Catalog of Domain Services
 
 ### 1. `UserAuthenticationService` ([Spec](./services/user-authentication-services.md))
-- **Package**: `application.domain.services`
-- **Dependencies**: `UserRepositoryPort`
-- **Operations**:
-  - `authenticate(Email email)`: Verifies user exists and status is `ACTIVE` (rejects `BLOCKED` or `PENDING_INCORPORATION`).
-  - `registerUser(User user)`: Ensures uniqueness of identifier and email.
-  - `blockUser(String identifier)`: Suspends user account.
-  - `activateUser(String identifier)`: Activates user account.
+- **Role**: Coordinates identity validation, user registration, account status management (`ACTIVE`, `BLOCKED`, `PENDING_INCORPORATION`), and email/ID uniqueness.
 
 ### 2. `SellerIncorporationService` ([Spec](./services/seller-incorporation-services.md))
-- **Package**: `application.domain.services`
-- **Dependencies**: `UserRepositoryPort`
-- **Operations**:
-  - `incorporateSeller(String sellerId, User adminUser)`: Enforces business rule that seller incorporation into the active marketplace can only be authorized by an `ADMIN` user.
-  - `incorporateSeller(Seller seller, User adminUser)`: Direct incorporation validation and persistence.
+- **Role**: Governs merchant onboarding. Enforces rule that sellers cannot self-register; incorporation is authorized exclusively by an `ADMIN` user.
 
 ### 3. `CatalogManagementService` ([Spec](./services/catalog-management-services.md))
-- **Package**: `application.domain.services`
-- **Dependencies**: `ProductRepositoryPort`
-- **Operations**:
-  - `registerProduct(Product product)`: Validates product and verifies SKU uniqueness.
-  - `publishProduct(String productId)`: Transitions status from `DRAFT` to `PUBLISHED`.
-  - `suspendProduct(String productId)`: Transitions status to `SUSPENDED`.
-  - `discontinueProduct(String productId)`: Transitions status to `DISCONTINUED`.
-  - `updatePrice(String productId, Money newPrice)`: Updates product price.
-  - `addVariant(String productId, ProductVariant variant)`: Appends variant options.
+- **Role**: Manages catalog publishing, price updates ($price > 0$), SKU uniqueness, variants, and product lifecycle (`DRAFT` -> `PUBLISHED` -> `SUSPENDED` / `DISCONTINUED`).
 
-### 4. `InventoryAllocationService` ([Spec](./services/inventory-allocation-services.md))
-- **Package**: `application.domain.services`
-- **Dependencies**: `InventoryRepositoryPort`, `WarehouseRepositoryPort`
-- **Operations**:
-  - `addStock(String inventoryId, String productId, String warehouseId, int quantity)`: Validates active warehouse, increments available stock.
-  - `reserveStock(String productId, String warehouseId, int quantity)`: Validates available stock, locks units into reserved stock.
-  - `confirmSale(String productId, String warehouseId, int quantity)`: Deducts sold units from reserved stock.
-  - `releaseReservation(String productId, String warehouseId, int quantity)`: Releases reserved stock back to available stock.
-  - `markStockAsDamaged(String productId, String warehouseId, int quantity)`: Transfers stock to damaged stock.
-  - `getTotalAvailableStock(String productId)`: Aggregates available stock across all warehouses.
+### 4. `WarehouseManagementService` ([Spec](./services/warehouse-management-services.md))
+- **Role**: Fulfills OBJ-04 & Section 6.1. Controls physical storage spaces, merchant and marketplace warehouses, activation, and location management under `ADMIN` authorization.
 
-### 5. `OrderCheckoutService` ([Spec](./services/order-checkout-services.md))
-- **Package**: `application.domain.services`
-- **Dependencies**: `OrderRepositoryPort`, `PaymentGatewayPort`, `NotificationPort`
-- **Operations**:
-  - `checkoutCart(String buyerId, String orderId, Address shippingAddress)`: Converts active cart items into formal `Order` in `PENDING_PAYMENT`, clears cart.
-  - `processOrderPayment(String orderId, String paymentToken, Email buyerEmail)`: Validates payment via gateway, transitions order to `PAID`, triggers confirmation notification.
-  - `cancelOrder(String orderId)`: Cancels order if not finalized.
+### 5. `InventoryAllocationService` ([Spec](./services/inventory-allocation-services.md))
+- **Role**: Coordinates stock reservation across multiple warehouses for checkout orders, enforcing the **Zero Negative Stock Rule**.
 
-### 6. `BillingInvoicingService` ([Spec](./services/billing-invoicing-services.md))
-- **Package**: `application.domain.services`
-- **Dependencies**: `InvoiceRepositoryPort`, `OrderRepositoryPort`
-- **Operations**:
-  - `generateInvoice(String invoiceId, String orderId, String buyerId, TaxIdentifier taxIdentifier, Address billingAddress)`: Generates legal tax invoice for `PAID` orders.
-  - `markInvoicePaid(String invoiceId)`: Updates invoice status to `PAID`.
-  - `cancelInvoice(String invoiceId)`: Updates invoice status to `CANCELLED`.
+### 6. `OrderCheckoutService` ([Spec](./services/order-checkout-services.md))
+- **Role**: Converts active shopping carts into pending orders, processes payments, coordinates order lifecycle, and handles cancellation.
 
-### 7. `LogisticsDispatchService` ([Spec](./services/logistics-dispatch-services.md))
-- **Package**: `application.domain.services`
-- **Dependencies**: `ShipmentRepositoryPort`, `OrderRepositoryPort`, `WarehouseRepositoryPort`
-- **Operations**:
-  - `prepareShipment(String shipmentId, String orderId, String warehouseId, Address destinationAddress)`: Initiates physical dispatch preparation for paid orders from an active warehouse.
-  - `dispatchShipment(String shipmentId, String carrier, String trackingNumber)`: Assigns carrier/tracking, marks shipment `IN_TRANSIT` and order `DISPATCHED`.
-  - `confirmDelivery(String shipmentId)`: Confirms delivery, marks shipment `DELIVERED` and order `DELIVERED_FINALIZED`.
-  - `reportFailedDelivery(String shipmentId)`: Marks shipment as `FAILED`.
+### 7. `BillingInvoicingService` ([Spec](./services/billing-invoicing-services.md))
+- **Role**: Issues legal commercial tax invoices upon order payment confirmation, computing tax identifiers and billing details.
 
-### 8. `ReturnRefundService` ([Spec](./services/return-refund-services.md))
-- **Package**: `application.domain.services`
-- **Dependencies**: `ReturnRepositoryPort`, `OrderRepositoryPort`, `InventoryRepositoryPort`, `PaymentGatewayPort`
-- **Operations**:
-  - `requestReturn(String returnId, String orderId, String buyerId, String productId, ReturnReason reason)`: Creates return request for delivered orders.
-  - `approveReturn(String returnId)`: Approves customer return.
-  - `rejectReturn(String returnId)`: Rejects customer return.
-  - `processReturnedItemAndRefund(String refundId, String returnId, String warehouseId, boolean isReusable, Money refundAmount)`: Inspects received item (restocks or marks damaged), processes monetary refund via payment gateway.
+### 8. `LogisticsDispatchService` ([Spec](./services/logistics-dispatch-services.md))
+- **Role**: Handles warehouse package preparation, carrier assignment, tracking number generation, and delivery tracking.
 
-### 9. `OperationAuditService` ([Spec](./services/operation-audit-services.md))
-- **Package**: `application.domain.services`
-- **Dependencies**: `AuditLogRepositoryPort`
-- **Operations**:
-  - `logOperation(String entryId, String actorId, UserRole role, String action, String targetAggregateId, String details)`: Appends immutable audit record.
-  - `getAllLogs()`: Retrieves complete administrative audit log history.
-  - `getLogsForAggregate(String aggregateId)`: Queries audit trail for specific aggregate.
+### 9. `ReturnRefundService` ([Spec](./services/return-refund-services.md))
+- **Role**: Handles post-sale return authorization, item inspection (restock reusable items vs. mark damaged), and refund processing.
+
+### 10. `OperationAuditService` ([Spec](./services/operation-audit-services.md))
+- **Role**: Logs administrative actions and system operations for reporting and tracking (OBJ-12).
+
+### 11. `AuthorizationService` ([Spec](./services/authorization-services.md))
+- **Role**: Enforces platform-wide quality controls, operational role constraints (RG-01, RG-02, RG-03), and the formal **Responsibility Matrix** (Section 12).
