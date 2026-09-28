@@ -40,8 +40,17 @@ class BuyerTest {
     }
 
     @Test
-    @DisplayName("Should throw IllegalStateException when Buyer attempts to administer another Buyer or User")
-    void shouldRejectBuyerAdminOperationOnTarget() {
+    @DisplayName("Should allow Buyer to perform self-service operations on their own account")
+    void shouldAllowBuyerSelfServiceOperation() {
+        Buyer buyer = new Buyer("BUY-101", "Bob Buyer", "bob@nexusmarket.com", "123 Main St", "STANDARD");
+
+        // Buyer can operate on themselves (same identifier)
+        assertDoesNotThrow(() -> buyer.validateOperation(buyer));
+    }
+
+    @Test
+    @DisplayName("Should throw IllegalStateException when Buyer attempts to administer another user")
+    void shouldRejectBuyerAdminOperationOnOtherUser() {
         Buyer buyer = new Buyer("BUY-101", "Bob Buyer", "bob@nexusmarket.com", "123 Main St", "STANDARD");
         User targetBuyer = new User("BUY-102", "Charlie Buyer", "charlie@nexusmarket.com", UserRole.BUYER, UserStatus.ACTIVE);
 

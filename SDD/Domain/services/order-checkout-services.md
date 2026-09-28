@@ -17,7 +17,7 @@ The **`OrderCheckoutService`** orchestrates shopping cart conversion into formal
 
 1. **Empty Cart Prohibition**: Checkout cannot proceed if the buyer's cart is empty.
 2. **Order Lifecycle Transitions**:
-   - `CART` -> `PENDING_PAYMENT` -> `PAID` -> `DISPATCHED` -> `DELIVERED_FINALIZED`
+   - `PENDING_PAYMENT` -> `PAID` -> `DISPATCHED` -> `DELIVERED_FINALIZED` (Cart state is managed by the separate `Cart` aggregate)
 3. **Immutability of Finalized Orders**: Once delivered and finalized, orders cannot be cancelled or modified.
 
 ---

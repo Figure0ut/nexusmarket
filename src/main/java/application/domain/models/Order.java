@@ -99,10 +99,6 @@ public class Order {
         return totalAmount;
     }
 
-    public void setTotalAmount(Money totalAmount) {
-        this.totalAmount = totalAmount;
-    }
-
     public void markAsPaid() {
         if (status != OrderStatus.PENDING_PAYMENT) {
             throw new IllegalStateException("Order '" + orderId + "' cannot transition to PAID from status '" + status + "'.");

@@ -87,11 +87,20 @@ public class Buyer extends User {
         }
     }
 
+    /**
+     * Validates that this Buyer is authorized to perform an operation on the target user.
+     * A Buyer can only perform self-service operations on their own account —
+     * they cannot perform administrative operations on other users.
+     *
+     * @param target the user being operated on
+     * @throws IllegalArgumentException if target is null
+     * @throws IllegalStateException if the Buyer is not authorized for this operation
+     */
     public void validateOperation(User target) {
         if (target == null) {
             throw new IllegalArgumentException("Target user cannot be null.");
         }
-        if (target.getRole() == UserRole.BUYER || target instanceof Buyer || !target.getIdentifier().equals(this.getIdentifier())) {
+        if (!target.getIdentifier().equals(this.getIdentifier())) {
             throw new IllegalStateException("Authorization Failure: Buyer '" + getIdentifier() +
                     "' is not authorized to perform administrative operations on target user '" + target.getIdentifier() + "'.");
         }

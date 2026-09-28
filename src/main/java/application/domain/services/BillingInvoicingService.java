@@ -47,7 +47,7 @@ public class BillingInvoicingService {
         Order order = orderRepositoryPort.findOrderById(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("Order not found with ID: " + orderId));
 
-        if (order.getStatus() == OrderStatus.CART || order.getStatus() == OrderStatus.PENDING_PAYMENT || order.getStatus() == OrderStatus.CANCELLED) {
+        if (order.getStatus() == OrderStatus.PENDING_PAYMENT || order.getStatus() == OrderStatus.CANCELLED) {
             throw new InvalidDomainStateException("Cannot generate invoice for order '" + orderId + "' with status: " + order.getStatus());
         }
 

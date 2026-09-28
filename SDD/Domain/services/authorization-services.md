@@ -18,11 +18,11 @@ The **`AuthorizationService`** enforces platform-wide quality controls, operatio
 2. **RG-02 (Single Role Assignment)**: Each participant possesses exactly one role within the system (`BUYER`, `SELLER`, `OPERATOR_LOGISTIC`, `ADMIN`, `SUPERVISOR`).
 3. **RG-03 (Role Segregation)**: No participant may execute operations or manage data outside their assigned role boundaries.
 4. **Responsibility Matrix (Section 12)**:
-   - `SELLER_REGISTRATION`: `ADMIN` only.
+   - `SELLER_REGISTRATION`: `ADMIN`, `SUPERVISOR`.
    - `PRODUCT_REGISTRATION`: `SELLER` only.
    - `INVENTORY_MANAGEMENT`: `SELLER`, `OPERATOR_LOGISTIC`.
-   - `ORDER_MANAGEMENT`: `BUYER`, `SELLER`, `OPERATOR_LOGISTIC`.
-   - `REFUND_MANAGEMENT`: `BUYER`, `ADMIN`.
+   - `ORDER_MANAGEMENT`: `BUYER`, `SELLER`, `OPERATOR_LOGISTIC`, `SUPERVISOR`.
+   - `REFUND_MANAGEMENT`: `BUYER`, `ADMIN`, `SUPERVISOR`.
 
 ---
 

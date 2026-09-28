@@ -19,12 +19,17 @@ public class AuthorizationService {
         REFUND_MANAGEMENT
     }
 
+    /**
+     * Responsibility Matrix mapping each business process to the set of authorized roles.
+     * SUPERVISOR has oversight authority over SELLER_REGISTRATION, ORDER_MANAGEMENT,
+     * and REFUND_MANAGEMENT processes.
+     */
     private static final Map<BusinessProcess, Set<UserRole>> RESPONSIBILITY_MATRIX = Map.of(
-            BusinessProcess.SELLER_REGISTRATION, EnumSet.of(UserRole.ADMIN),
+            BusinessProcess.SELLER_REGISTRATION, EnumSet.of(UserRole.ADMIN, UserRole.SUPERVISOR),
             BusinessProcess.PRODUCT_REGISTRATION, EnumSet.of(UserRole.SELLER),
             BusinessProcess.INVENTORY_MANAGEMENT, EnumSet.of(UserRole.SELLER, UserRole.OPERATOR_LOGISTIC),
-            BusinessProcess.ORDER_MANAGEMENT, EnumSet.of(UserRole.BUYER, UserRole.SELLER, UserRole.OPERATOR_LOGISTIC),
-            BusinessProcess.REFUND_MANAGEMENT, EnumSet.of(UserRole.BUYER, UserRole.ADMIN)
+            BusinessProcess.ORDER_MANAGEMENT, EnumSet.of(UserRole.BUYER, UserRole.SELLER, UserRole.OPERATOR_LOGISTIC, UserRole.SUPERVISOR),
+            BusinessProcess.REFUND_MANAGEMENT, EnumSet.of(UserRole.BUYER, UserRole.ADMIN, UserRole.SUPERVISOR)
     );
 
     public void validateProcessAuthorization(User actor, BusinessProcess process) {

@@ -25,8 +25,8 @@ All non-enum Value Objects feature default and overloaded constructors, getters,
 - **`WarehouseType`**: `MARKETPLACE`, `SELLER`.
 - **`ProductType`**: `PHYSICAL`, `DIGITAL`.
 - **`ProductStatus`**: `DRAFT`, `PUBLISHED`, `SUSPENDED`, `DISCONTINUED`.
-- **`InventoryMovementType`**: `INFLOW`, `RESERVE`, `OUTFLOW_SALE`, `ADJUSTMENT`, `RETURN`.
-- **`OrderStatus`**: `CART`, `PENDING_PAYMENT`, `PAID`, `DISPATCHED`, `DELIVERED_FINALIZED`, `CANCELLED`.
+- **`InventoryMovementType`**: `INFLOW`, `RESERVE`, `OUTFLOW_SALE`, `ADJUSTMENT`, `RETURN`. Tracked via `Inventory.lastMovementType`.
+- **`OrderStatus`**: `PENDING_PAYMENT`, `PAID`, `DISPATCHED`, `DELIVERED_FINALIZED`, `CANCELLED`. Note: Cart state is managed by the separate `Cart` aggregate.
 - **`InvoiceStatus`**: `ISSUED`, `PAID`, `CANCELLED`.
 - **`ShipmentStatus`**: `PREPARING`, `IN_TRANSIT`, `DELIVERED`, `FAILED`.
 - **`ReturnReason`**: `DAMAGED`, `WRONG_ITEM`, `DEFECTIVE`, `CUSTOMER_REGRET`.

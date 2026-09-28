@@ -1,5 +1,6 @@
 package application.domain.models;
 
+import application.domain.enums.InventoryMovementType;
 import application.domain.valueobjects.StockQuantity;
 
 import java.util.Objects;
@@ -12,6 +13,7 @@ public class Inventory {
     private StockQuantity availableStock;
     private StockQuantity reservedStock;
     private StockQuantity damagedStock;
+    private InventoryMovementType lastMovementType;
 
     public Inventory() {
         this.availableStock = StockQuantity.zero();
@@ -90,10 +92,35 @@ public class Inventory {
         this.damagedStock = damagedStock != null ? damagedStock : StockQuantity.zero();
     }
 
-    public void addStock(int quantity) {
-        this.availableStock = this.availableStock.add(quantity);
+    /**
+     * Returns the type of the last inventory movement performed on this record.
+     *
+     * @return the last movement type, or null if no movement has occurred
+     */
+    public InventoryMovementType getLastMovementType() {
+        return lastMovementType;
     }
 
+    public void setLastMovementType(InventoryMovementType lastMovementType) {
+        this.lastMovementType = lastMovementType;
+    }
+
+    /**
+     * Adds stock to available inventory (INFLOW movement).
+     *
+     * @param quantity the number of units to add
+     */
+    public void addStock(int quantity) {
+        this.availableStock = this.availableStock.add(quantity);
+        this.lastMovementType = InventoryMovementType.INFLOW;
+    }
+
+    /**
+     * Reserves available stock for a pending order (RESERVE movement).
+     *
+     * @param quantity the number of units to reserve
+     * @throws IllegalStateException if insufficient available stock
+     */
     public void reserveStock(int quantity) {
         if (this.availableStock.getValue() < quantity) {
             throw new IllegalStateException("Stock Reservation Failure: Product '" + productId +
@@ -102,16 +129,30 @@ public class Inventory {
         }
         this.availableStock = this.availableStock.subtract(quantity);
         this.reservedStock = this.reservedStock.add(quantity);
+        this.lastMovementType = InventoryMovementType.RESERVE;
     }
 
+    /**
+     * Confirms a sale by removing reserved stock (OUTFLOW_SALE movement).
+     *
+     * @param quantity the number of units sold
+     * @throws IllegalStateException if reserved stock is insufficient
+     */
     public void confirmSale(int quantity) {
         if (this.reservedStock.getValue() < quantity) {
             throw new IllegalStateException("Sale Confirmation Failure: Reserved stock (" +
                     reservedStock.getValue() + ") is less than sale quantity (" + quantity + ").");
         }
         this.reservedStock = this.reservedStock.subtract(quantity);
+        this.lastMovementType = InventoryMovementType.OUTFLOW_SALE;
     }
 
+    /**
+     * Releases a reservation, returning stock to available (RETURN movement).
+     *
+     * @param quantity the number of units to release
+     * @throws IllegalStateException if reserved stock is insufficient
+     */
     public void releaseReservation(int quantity) {
         if (this.reservedStock.getValue() < quantity) {
             throw new IllegalStateException("Reservation Release Failure: Reserved stock (" +
@@ -119,11 +160,18 @@ public class Inventory {
         }
         this.reservedStock = this.reservedStock.subtract(quantity);
         this.availableStock = this.availableStock.add(quantity);
+        this.lastMovementType = InventoryMovementType.RETURN;
     }
 
+    /**
+     * Marks available stock as damaged (ADJUSTMENT movement).
+     *
+     * @param quantity the number of units to mark as damaged
+     */
     public void markAsDamaged(int quantity) {
         this.availableStock = this.availableStock.subtract(quantity);
         this.damagedStock = this.damagedStock.add(quantity);
+        this.lastMovementType = InventoryMovementType.ADJUSTMENT;
     }
 
     @Override
