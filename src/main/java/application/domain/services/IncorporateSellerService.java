@@ -6,11 +6,14 @@ import application.domain.models.Seller;
 import application.domain.models.User;
 import application.domain.ports.out.UserRepositoryPort;
 
-public class SellerIncorporationService {
+/**
+ * Atomic domain service responsible exclusively for incorporating sellers under ADMIN governance.
+ */
+public class IncorporateSellerService {
 
     private final UserRepositoryPort userRepositoryPort;
 
-    public SellerIncorporationService(UserRepositoryPort userRepositoryPort) {
+    public IncorporateSellerService(UserRepositoryPort userRepositoryPort) {
         if (userRepositoryPort == null) {
             throw new IllegalArgumentException("UserRepositoryPort cannot be null.");
         }
@@ -21,7 +24,7 @@ public class SellerIncorporationService {
         if (sellerId == null || sellerId.trim().isEmpty()) {
             throw new IllegalArgumentException("Seller ID cannot be null or empty.");
         }
-        User user = userRepositoryPort.findById(sellerId)
+        User user = userRepositoryPort.findById(sellerId.trim())
                 .orElseThrow(() -> new EntityNotFoundException("Seller not found with identifier: " + sellerId));
 
         if (!(user instanceof Seller)) {

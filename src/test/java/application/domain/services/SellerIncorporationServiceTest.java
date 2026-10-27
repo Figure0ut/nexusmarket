@@ -2,7 +2,6 @@ package application.domain.services;
 
 import application.domain.enums.UserRole;
 import application.domain.enums.UserStatus;
-import application.domain.exceptions.InvalidDomainStateException;
 import application.domain.models.Seller;
 import application.domain.models.User;
 import application.domain.ports.out.UserRepositoryPort;
@@ -20,17 +19,17 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class SellerIncorporationServiceTest {
 
-    private SellerIncorporationService incorporationService;
+    private IncorporateSellerService incorporationService;
     private MockUserRepository userRepository;
 
     @BeforeEach
     void setUp() {
         userRepository = new MockUserRepository();
-        incorporationService = new SellerIncorporationService(userRepository);
+        incorporationService = new IncorporateSellerService(userRepository);
     }
 
     @Test
-    @DisplayName("Should successfully incorporate seller when authorized by ADMIN")
+    @DisplayName("Should successfully incorporate seller when authorized by ADMIN via atomic service")
     void shouldIncorporateSellerByAdmin() {
         Seller seller = new Seller("SEL-1", "Seller Co", new Email("seller@nexusmarket.com"), UserRole.SELLER, UserStatus.PENDING_INCORPORATION, new TaxIdentifier("TAX-999"), "Seller Corp");
         userRepository.save(seller);

@@ -11,15 +11,18 @@ import application.domain.ports.out.ShipmentRepositoryPort;
 import application.domain.ports.out.WarehouseRepositoryPort;
 import application.domain.valueobjects.Address;
 
-public class LogisticsDispatchService {
+/**
+ * Atomic domain service responsible exclusively for preparing a shipment for a paid order.
+ */
+public class PrepareShipmentService {
 
     private final ShipmentRepositoryPort shipmentRepositoryPort;
     private final OrderRepositoryPort orderRepositoryPort;
     private final WarehouseRepositoryPort warehouseRepositoryPort;
 
-    public LogisticsDispatchService(ShipmentRepositoryPort shipmentRepositoryPort,
-                                    OrderRepositoryPort orderRepositoryPort,
-                                    WarehouseRepositoryPort warehouseRepositoryPort) {
+    public PrepareShipmentService(ShipmentRepositoryPort shipmentRepositoryPort,
+                                  OrderRepositoryPort orderRepositoryPort,
+                                  WarehouseRepositoryPort warehouseRepositoryPort) {
         if (shipmentRepositoryPort == null) {
             throw new IllegalArgumentException("ShipmentRepositoryPort cannot be null.");
         }
@@ -64,45 +67,5 @@ public class LogisticsDispatchService {
 
         Shipment shipment = new Shipment(shipmentId, orderId, warehouseId, destinationAddress);
         return shipmentRepositoryPort.save(shipment);
-    }
-
-    public Shipment getShipment(String shipmentId) {
-        if (shipmentId == null || shipmentId.trim().isEmpty()) {
-            throw new IllegalArgumentException("Shipment ID cannot be null or empty.");
-        }
-        return shipmentRepositoryPort.findById(shipmentId)
-                .orElseThrow(() -> new EntityNotFoundException("Shipment not found with ID: " + shipmentId));
-    }
-
-    public void dispatchShipment(String shipmentId, String carrier, String trackingNumber) {
-        Shipment shipment = getShipment(shipmentId);
-        shipment.dispatch(carrier, trackingNumber);
-
-        Order order = orderRepositoryPort.findOrderById(shipment.getOrderId())
-                .orElseThrow(() -> new EntityNotFoundException("Order not found with ID: " + shipment.getOrderId()));
-
-        order.markAsDispatched();
-
-        shipmentRepositoryPort.save(shipment);
-        orderRepositoryPort.saveOrder(order);
-    }
-
-    public void confirmDelivery(String shipmentId) {
-        Shipment shipment = getShipment(shipmentId);
-        shipment.confirmDelivery();
-
-        Order order = orderRepositoryPort.findOrderById(shipment.getOrderId())
-                .orElseThrow(() -> new EntityNotFoundException("Order not found with ID: " + shipment.getOrderId()));
-
-        order.finalizeDelivery();
-
-        shipmentRepositoryPort.save(shipment);
-        orderRepositoryPort.saveOrder(order);
-    }
-
-    public void reportFailedDelivery(String shipmentId) {
-        Shipment shipment = getShipment(shipmentId);
-        shipment.markAsFailed();
-        shipmentRepositoryPort.save(shipment);
     }
 }

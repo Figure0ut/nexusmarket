@@ -1,7 +1,6 @@
 package application.domain.services;
 
 import application.domain.enums.InvoiceStatus;
-import application.domain.enums.OrderStatus;
 import application.domain.exceptions.InvalidDomainStateException;
 import application.domain.models.Invoice;
 import application.domain.models.Order;
@@ -24,7 +23,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class BillingInvoicingServiceTest {
 
-    private BillingInvoicingService billingService;
+    private CreateInvoiceService createInvoiceService;
+    private GetInvoiceService getInvoiceService;
+    private MarkInvoicePaidService markInvoicePaidService;
+    private CancelInvoiceService cancelInvoiceService;
+
     private InMemoryInvoiceRepository invoiceRepository;
     private MockOrderRepository orderRepository;
 
@@ -32,17 +35,21 @@ class BillingInvoicingServiceTest {
     void setUp() {
         invoiceRepository = new InMemoryInvoiceRepository();
         orderRepository = new MockOrderRepository();
-        billingService = new BillingInvoicingService(invoiceRepository, orderRepository);
+
+        createInvoiceService = new CreateInvoiceService(invoiceRepository, orderRepository);
+        getInvoiceService = new GetInvoiceService(invoiceRepository);
+        markInvoicePaidService = new MarkInvoicePaidService(invoiceRepository);
+        cancelInvoiceService = new CancelInvoiceService(invoiceRepository);
     }
 
     @Test
-    @DisplayName("Should generate invoice for paid order and manage payment/cancellation")
+    @DisplayName("Should generate invoice for paid order and manage payment/cancellation via atomic services")
     void shouldGenerateAndManageInvoice() {
         Order order = new Order("ORD-1", "BUY-1", List.of(new OrderItem("P-1", "Prod", new Money(100.00), 1)), new Address("123 St", "City", "ST", "111", "USA"));
         order.markAsPaid();
         orderRepository.save(order);
 
-        Invoice invoice = billingService.generateInvoice(
+        Invoice invoice = createInvoiceService.createInvoice(
                 "INV-1", "ORD-1", "BUY-1", new TaxIdentifier("TAX-12345"), new Address("123 St", "City", "ST", "111", "USA")
         );
 
@@ -50,11 +57,11 @@ class BillingInvoicingServiceTest {
         assertEquals(InvoiceStatus.ISSUED, invoice.getStatus());
         assertEquals(new Money(100.00), invoice.getTotalAmount());
 
-        billingService.markInvoicePaid("INV-1");
-        assertEquals(InvoiceStatus.PAID, billingService.getInvoice("INV-1").getStatus());
+        markInvoicePaidService.markInvoicePaid("INV-1");
+        assertEquals(InvoiceStatus.PAID, getInvoiceService.getInvoice("INV-1").getStatus());
 
-        billingService.cancelInvoice("INV-1");
-        assertEquals(InvoiceStatus.CANCELLED, billingService.getInvoice("INV-1").getStatus());
+        cancelInvoiceService.cancelInvoice("INV-1");
+        assertEquals(InvoiceStatus.CANCELLED, getInvoiceService.getInvoice("INV-1").getStatus());
     }
 
     @Test
@@ -64,7 +71,7 @@ class BillingInvoicingServiceTest {
         orderRepository.save(order);
 
         assertThrows(InvalidDomainStateException.class, () ->
-                billingService.generateInvoice("INV-1", "ORD-1", "BUY-1", new TaxIdentifier("TAX-12345"), new Address("123 St", "City", "ST", "111", "USA"))
+                createInvoiceService.createInvoice("INV-1", "ORD-1", "BUY-1", new TaxIdentifier("TAX-12345"), new Address("123 St", "City", "ST", "111", "USA"))
         );
     }
 

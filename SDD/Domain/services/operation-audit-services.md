@@ -1,29 +1,38 @@
-# Operation Audit Domain Service Specification
+# Operation Audit Atomic Domain Services Specification
 
 ## 1. Context & Business Purpose
-The **`OperationAuditService`** consolidates operational and administrative audit logs for compliance, query reports, and executive tracking (OBJ-12 & Dominio 12).
+The Operation Audit domain records an append-only audit trail for administrative actions, security transitions, and operational traceability (OBJ-12 & Dominio 12). Each operation is implemented as an atomic domain service.
 
 ---
 
-## 2. Package Location & Dependencies
+## 2. Package Location & Atomic Services
 - **Package**: `application.domain.services`
-- **Class**: [`OperationAuditService`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/services/OperationAuditService.java)
 - **Dependencies**: [`AuditLogRepositoryPort`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/ports/out/AuditLogRepositoryPort.java)
 - **Associated Models**: [`AuditEntry`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/models/AuditEntry.java), [`UserRole`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/enums/UserRole.java)
+
+### Services
+1. **`LogOperationService`**: Records an immutable audit log entry.
+2. **`GetAllAuditLogsService`**: Retrieves all audit logs recorded in the system.
+3. **`GetAuditLogsByAggregateService`**: Retrieves audit logs for a specific target aggregate.
 
 ---
 
 ## 3. Core Business Invariants & Rules
 
-1. **Immutability of Audit Logs**: Audit records are append-only.
-2. **Context Logging**: Every audit log entry records the unique entry ID, actor ID, user role, action string, target aggregate ID, timestamp, and metadata details.
+1. **Append-Only Immutability**: Audit entries are strictly append-only; modification or deletion is disallowed.
+2. **Actor Traceability**: Every audit entry records the actor ID and their active role at the time of operation.
 
 ---
 
 ## 4. Method Signatures
 
 ```java
+// LogOperationService
 public void logOperation(String entryId, String actorId, UserRole role, String action, String targetAggregateId, String details);
+
+// GetAllAuditLogsService
 public List<AuditEntry> getAllLogs();
+
+// GetAuditLogsByAggregateService
 public List<AuditEntry> getLogsForAggregate(String aggregateId);
 ```

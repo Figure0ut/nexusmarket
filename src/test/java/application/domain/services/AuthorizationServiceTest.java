@@ -12,15 +12,15 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class AuthorizationServiceTest {
 
-    private AuthorizationService authService;
+    private ValidateAuthorizationService authService;
 
     @BeforeEach
     void setUp() {
-        authService = new AuthorizationService();
+        authService = new ValidateAuthorizationService();
     }
 
     @Test
-    @DisplayName("Should validate authorization according to Responsibility Matrix")
+    @DisplayName("Should validate authorization according to Responsibility Matrix via atomic service")
     void shouldAuthorizeAllowedRoles() {
         User admin = new User("ADM-1", "Admin", "admin@nexusmarket.com", UserRole.ADMIN, UserStatus.ACTIVE);
         User seller = new User("SEL-1", "Seller", "seller@nexusmarket.com", UserRole.SELLER, UserStatus.ACTIVE);
@@ -28,16 +28,16 @@ class AuthorizationServiceTest {
         User operator = new User("OP-1", "Operator", "op@nexusmarket.com", UserRole.OPERATOR_LOGISTIC, UserStatus.ACTIVE);
 
         // Admin can register sellers
-        assertDoesNotThrow(() -> authService.validateProcessAuthorization(admin, AuthorizationService.BusinessProcess.SELLER_REGISTRATION));
+        assertDoesNotThrow(() -> authService.validateProcessAuthorization(admin, ValidateAuthorizationService.BusinessProcess.SELLER_REGISTRATION));
 
         // Seller can register products
-        assertDoesNotThrow(() -> authService.validateProcessAuthorization(seller, AuthorizationService.BusinessProcess.PRODUCT_REGISTRATION));
+        assertDoesNotThrow(() -> authService.validateProcessAuthorization(seller, ValidateAuthorizationService.BusinessProcess.PRODUCT_REGISTRATION));
 
         // Operator can manage inventory
-        assertDoesNotThrow(() -> authService.validateProcessAuthorization(operator, AuthorizationService.BusinessProcess.INVENTORY_MANAGEMENT));
+        assertDoesNotThrow(() -> authService.validateProcessAuthorization(operator, ValidateAuthorizationService.BusinessProcess.INVENTORY_MANAGEMENT));
 
         // Buyer can manage orders
-        assertDoesNotThrow(() -> authService.validateProcessAuthorization(buyer, AuthorizationService.BusinessProcess.ORDER_MANAGEMENT));
+        assertDoesNotThrow(() -> authService.validateProcessAuthorization(buyer, ValidateAuthorizationService.BusinessProcess.ORDER_MANAGEMENT));
     }
 
     @Test
@@ -47,7 +47,7 @@ class AuthorizationServiceTest {
 
         // Buyer cannot register products (Seller only)
         assertThrows(InvalidDomainStateException.class, () ->
-                authService.validateProcessAuthorization(buyer, AuthorizationService.BusinessProcess.PRODUCT_REGISTRATION)
+                authService.validateProcessAuthorization(buyer, ValidateAuthorizationService.BusinessProcess.PRODUCT_REGISTRATION)
         );
     }
 
@@ -57,7 +57,7 @@ class AuthorizationServiceTest {
         User blockedAdmin = new User("ADM-1", "Admin", "admin@nexusmarket.com", UserRole.ADMIN, UserStatus.BLOCKED);
 
         assertThrows(InvalidDomainStateException.class, () ->
-                authService.validateProcessAuthorization(blockedAdmin, AuthorizationService.BusinessProcess.SELLER_REGISTRATION)
+                authService.validateProcessAuthorization(blockedAdmin, ValidateAuthorizationService.BusinessProcess.SELLER_REGISTRATION)
         );
     }
 }

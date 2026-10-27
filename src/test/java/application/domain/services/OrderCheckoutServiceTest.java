@@ -3,7 +3,6 @@ package application.domain.services;
 import application.domain.enums.OrderStatus;
 import application.domain.exceptions.InvalidDomainStateException;
 import application.domain.models.Cart;
-import application.domain.models.CartItem;
 import application.domain.models.Order;
 import application.domain.ports.out.NotificationPort;
 import application.domain.ports.out.OrderRepositoryPort;
@@ -25,7 +24,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class OrderCheckoutServiceTest {
 
-    private OrderCheckoutService checkoutService;
+    private CheckoutCartService checkoutCartService;
+    private ProcessOrderPaymentService processOrderPaymentService;
+    private CancelOrderService cancelOrderService;
+    private GetOrderService getOrderService;
+
     private InMemoryOrderRepository orderRepository;
     private MockPaymentGateway paymentGateway;
     private MockNotificationPort notificationPort;
@@ -35,11 +38,15 @@ class OrderCheckoutServiceTest {
         orderRepository = new InMemoryOrderRepository();
         paymentGateway = new MockPaymentGateway();
         notificationPort = new MockNotificationPort();
-        checkoutService = new OrderCheckoutService(orderRepository, paymentGateway, notificationPort);
+
+        checkoutCartService = new CheckoutCartService(orderRepository);
+        processOrderPaymentService = new ProcessOrderPaymentService(orderRepository, paymentGateway, notificationPort);
+        cancelOrderService = new CancelOrderService(orderRepository);
+        getOrderService = new GetOrderService(orderRepository);
     }
 
     @Test
-    @DisplayName("Should successfully checkout cart, process payment, and notify buyer")
+    @DisplayName("Should successfully checkout cart, process payment, and notify buyer via atomic services")
     void shouldCheckoutCartAndPay() {
         Cart cart = new Cart("CART-1", "BUY-1");
         cart.addItem("PROD-1", new Money(100.00), 2);
@@ -47,7 +54,7 @@ class OrderCheckoutServiceTest {
         orderRepository.saveCart(cart);
 
         Address shipping = new Address("123 Street", "City", "State", "12345", "USA");
-        Order order = checkoutService.checkoutCart("BUY-1", "ORD-101", shipping);
+        Order order = checkoutCartService.checkoutCart("BUY-1", "ORD-101", shipping);
 
         assertNotNull(order);
         assertEquals("ORD-101", order.getOrderId());
@@ -55,9 +62,9 @@ class OrderCheckoutServiceTest {
         assertEquals(new Money(250.00), order.getTotalAmount());
         assertTrue(cart.getItems().isEmpty());
 
-        boolean paid = checkoutService.processOrderPayment("ORD-101", "tok_test123", new Email("buyer@nexusmarket.com"));
+        boolean paid = processOrderPaymentService.processOrderPayment("ORD-101", "tok_test123", new Email("buyer@nexusmarket.com"));
         assertTrue(paid);
-        assertEquals(OrderStatus.PAID, orderRepository.findOrderById("ORD-101").get().getStatus());
+        assertEquals(OrderStatus.PAID, getOrderService.getOrder("ORD-101").getStatus());
         assertEquals(1, notificationPort.sentEmails.size());
     }
 
@@ -69,7 +76,7 @@ class OrderCheckoutServiceTest {
 
         Address shipping = new Address("123 Street", "City", "State", "12345", "USA");
         assertThrows(InvalidDomainStateException.class, () ->
-                checkoutService.checkoutCart("BUY-1", "ORD-101", shipping)
+                checkoutCartService.checkoutCart("BUY-1", "ORD-101", shipping)
         );
     }
 

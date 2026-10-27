@@ -14,24 +14,29 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class OperationAuditServiceTest {
 
-    private OperationAuditService auditService;
+    private LogOperationService logOperationService;
+    private GetAllAuditLogsService getAllAuditLogsService;
+    private GetAuditLogsByAggregateService getAuditLogsByAggregateService;
+
     private MockAuditRepository auditRepository;
 
     @BeforeEach
     void setUp() {
         auditRepository = new MockAuditRepository();
-        auditService = new OperationAuditService(auditRepository);
+        logOperationService = new LogOperationService(auditRepository);
+        getAllAuditLogsService = new GetAllAuditLogsService(auditRepository);
+        getAuditLogsByAggregateService = new GetAuditLogsByAggregateService(auditRepository);
     }
 
     @Test
-    @DisplayName("Should successfully record audit log and query by aggregate ID")
+    @DisplayName("Should successfully record audit log and query by aggregate ID via atomic services")
     void shouldLogAndQueryAuditEntries() {
-        auditService.logOperation("AUD-1", "ADM-100", UserRole.ADMIN, "INCORPORATE_SELLER", "SEL-50", "Admin incorporated seller");
-        auditService.logOperation("AUD-2", "ADM-100", UserRole.ADMIN, "SUSPEND_PRODUCT", "P-10", "Product suspended for review");
+        logOperationService.logOperation("AUD-1", "ADM-100", UserRole.ADMIN, "INCORPORATE_SELLER", "SEL-50", "Admin incorporated seller");
+        logOperationService.logOperation("AUD-2", "ADM-100", UserRole.ADMIN, "SUSPEND_PRODUCT", "P-10", "Product suspended for review");
 
-        assertEquals(2, auditService.getAllLogs().size());
-        assertEquals(1, auditService.getLogsForAggregate("SEL-50").size());
-        assertEquals("INCORPORATE_SELLER", auditService.getLogsForAggregate("SEL-50").get(0).getAction());
+        assertEquals(2, getAllAuditLogsService.getAllLogs().size());
+        assertEquals(1, getAuditLogsByAggregateService.getLogsForAggregate("SEL-50").size());
+        assertEquals("INCORPORATE_SELLER", getAuditLogsByAggregateService.getLogsForAggregate("SEL-50").get(0).getAction());
     }
 
     private static class MockAuditRepository implements AuditLogRepositoryPort {

@@ -11,12 +11,16 @@ import application.domain.ports.out.OrderRepositoryPort;
 import application.domain.valueobjects.Address;
 import application.domain.valueobjects.TaxIdentifier;
 
-public class BillingInvoicingService {
+/**
+ * Atomic domain service responsible exclusively for creating and issuing legal tax invoices
+ * for paid orders.
+ */
+public class CreateInvoiceService {
 
     private final InvoiceRepositoryPort invoiceRepositoryPort;
     private final OrderRepositoryPort orderRepositoryPort;
 
-    public BillingInvoicingService(InvoiceRepositoryPort invoiceRepositoryPort, OrderRepositoryPort orderRepositoryPort) {
+    public CreateInvoiceService(InvoiceRepositoryPort invoiceRepositoryPort, OrderRepositoryPort orderRepositoryPort) {
         if (invoiceRepositoryPort == null) {
             throw new IllegalArgumentException("InvoiceRepositoryPort cannot be null.");
         }
@@ -27,7 +31,7 @@ public class BillingInvoicingService {
         this.orderRepositoryPort = orderRepositoryPort;
     }
 
-    public Invoice generateInvoice(String invoiceId, String orderId, String buyerId, TaxIdentifier taxIdentifier, Address billingAddress) {
+    public Invoice createInvoice(String invoiceId, String orderId, String buyerId, TaxIdentifier taxIdentifier, Address billingAddress) {
         if (invoiceId == null || invoiceId.trim().isEmpty()) {
             throw new IllegalArgumentException("Invoice ID cannot be null or empty.");
         }
@@ -53,25 +57,5 @@ public class BillingInvoicingService {
 
         Invoice invoice = new Invoice(invoiceId, orderId, buyerId, taxIdentifier, billingAddress, order.getTotalAmount(), InvoiceStatus.ISSUED);
         return invoiceRepositoryPort.save(invoice);
-    }
-
-    public Invoice getInvoice(String invoiceId) {
-        if (invoiceId == null || invoiceId.trim().isEmpty()) {
-            throw new IllegalArgumentException("Invoice ID cannot be null or empty.");
-        }
-        return invoiceRepositoryPort.findById(invoiceId)
-                .orElseThrow(() -> new EntityNotFoundException("Invoice not found with ID: " + invoiceId));
-    }
-
-    public void markInvoicePaid(String invoiceId) {
-        Invoice invoice = getInvoice(invoiceId);
-        invoice.markAsPaid();
-        invoiceRepositoryPort.save(invoice);
-    }
-
-    public void cancelInvoice(String invoiceId) {
-        Invoice invoice = getInvoice(invoiceId);
-        invoice.cancel();
-        invoiceRepositoryPort.save(invoice);
     }
 }

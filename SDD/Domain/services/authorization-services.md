@@ -1,13 +1,13 @@
-# Authorization Domain Service Specification
+# Authorization Atomic Domain Service Specification
 
 ## 1. Context & Business Purpose
-The **`AuthorizationService`** enforces platform-wide quality controls, operational role constraints, and the formal **Responsibility Matrix** (Restricciones Generales RG-01, RG-02, RG-03, and Sección 12).
+The **`ValidateAuthorizationService`** enforces platform-wide quality controls, operational role constraints, and the formal **Responsibility Matrix** (Restricciones Generales RG-01, RG-02, RG-03, and Sección 12).
 
 ---
 
 ## 2. Package Location & Dependencies
 - **Package**: `application.domain.services`
-- **Class**: [`AuthorizationService`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/services/AuthorizationService.java)
+- **Class**: [`ValidateAuthorizationService`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/services/ValidateAuthorizationService.java)
 - **Associated Models**: [`User`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/models/User.java), [`UserRole`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/enums/UserRole.java), [`UserStatus`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/enums/UserStatus.java)
 
 ---
@@ -29,6 +29,7 @@ The **`AuthorizationService`** enforces platform-wide quality controls, operatio
 ## 4. Method Signatures
 
 ```java
+// ValidateAuthorizationService
 public void validateProcessAuthorization(User actor, BusinessProcess process);
 public boolean isAuthorized(User actor, BusinessProcess process);
 ```

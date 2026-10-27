@@ -26,7 +26,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class LogisticsDispatchServiceTest {
 
-    private LogisticsDispatchService logisticsService;
+    private PrepareShipmentService prepareShipmentService;
+    private DispatchShipmentService dispatchShipmentService;
+    private ConfirmDeliveryService confirmDeliveryService;
+    private GetShipmentService getShipmentService;
+
     private MockShipmentRepository shipmentRepository;
     private MockOrderRepository orderRepository;
     private MockWarehouseRepository warehouseRepository;
@@ -36,11 +40,15 @@ class LogisticsDispatchServiceTest {
         shipmentRepository = new MockShipmentRepository();
         orderRepository = new MockOrderRepository();
         warehouseRepository = new MockWarehouseRepository();
-        logisticsService = new LogisticsDispatchService(shipmentRepository, orderRepository, warehouseRepository);
+
+        prepareShipmentService = new PrepareShipmentService(shipmentRepository, orderRepository, warehouseRepository);
+        dispatchShipmentService = new DispatchShipmentService(shipmentRepository, orderRepository);
+        confirmDeliveryService = new ConfirmDeliveryService(shipmentRepository, orderRepository);
+        getShipmentService = new GetShipmentService(shipmentRepository);
     }
 
     @Test
-    @DisplayName("Should prepare shipment, dispatch with tracking, and confirm delivery")
+    @DisplayName("Should prepare shipment, dispatch with tracking, and confirm delivery via atomic services")
     void shouldHandleCompleteShipmentLifecycle() {
         Order order = new Order("ORD-1", "BUY-1", List.of(new OrderItem("P-1", "Prod", new Money(100.00), 1)), new Address("Dest St", "City", "ST", "123", "USA"));
         order.markAsPaid();
@@ -49,15 +57,15 @@ class LogisticsDispatchServiceTest {
         Warehouse warehouse = new Warehouse("WH-1", "Main Warehouse", new Address("WH St", "City", "ST", "123", "USA"), WarehouseType.MARKETPLACE, "ADM-1", true);
         warehouseRepository.save(warehouse);
 
-        Shipment shipment = logisticsService.prepareShipment("SHIP-1", "ORD-1", "WH-1", new Address("Dest St", "City", "ST", "123", "USA"));
+        Shipment shipment = prepareShipmentService.prepareShipment("SHIP-1", "ORD-1", "WH-1", new Address("Dest St", "City", "ST", "123", "USA"));
         assertEquals(ShipmentStatus.PREPARING, shipment.getStatus());
 
-        logisticsService.dispatchShipment("SHIP-1", "DHL Express", "DHL-987654");
-        assertEquals(ShipmentStatus.IN_TRANSIT, shipmentRepository.findById("SHIP-1").get().getStatus());
+        dispatchShipmentService.dispatchShipment("SHIP-1", "DHL Express", "DHL-987654");
+        assertEquals(ShipmentStatus.IN_TRANSIT, getShipmentService.getShipment("SHIP-1").getStatus());
         assertEquals(OrderStatus.DISPATCHED, orderRepository.findOrderById("ORD-1").get().getStatus());
 
-        logisticsService.confirmDelivery("SHIP-1");
-        assertEquals(ShipmentStatus.DELIVERED, shipmentRepository.findById("SHIP-1").get().getStatus());
+        confirmDeliveryService.confirmDelivery("SHIP-1");
+        assertEquals(ShipmentStatus.DELIVERED, getShipmentService.getShipment("SHIP-1").getStatus());
         assertEquals(OrderStatus.DELIVERED_FINALIZED, orderRepository.findOrderById("ORD-1").get().getStatus());
     }
 
@@ -72,7 +80,7 @@ class LogisticsDispatchServiceTest {
         warehouseRepository.save(warehouse);
 
         assertThrows(InvalidDomainStateException.class, () ->
-                logisticsService.prepareShipment("SHIP-1", "ORD-1", "WH-1", new Address("Dest St", "City", "ST", "123", "USA"))
+                prepareShipmentService.prepareShipment("SHIP-1", "ORD-1", "WH-1", new Address("Dest St", "City", "ST", "123", "USA"))
         );
     }
 

@@ -28,7 +28,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ReturnRefundServiceTest {
 
-    private ReturnRefundService returnService;
+    private RequestReturnService requestReturnService;
+    private ApproveReturnService approveReturnService;
+    private ProcessReturnAndRefundService processReturnAndRefundService;
+
     private MockReturnRepository returnRepository;
     private MockOrderRepository orderRepository;
     private MockInventoryRepository inventoryRepository;
@@ -40,11 +43,14 @@ class ReturnRefundServiceTest {
         orderRepository = new MockOrderRepository();
         inventoryRepository = new MockInventoryRepository();
         paymentGateway = new MockPaymentGateway();
-        returnService = new ReturnRefundService(returnRepository, orderRepository, inventoryRepository, paymentGateway);
+
+        requestReturnService = new RequestReturnService(returnRepository, orderRepository);
+        approveReturnService = new ApproveReturnService(returnRepository);
+        processReturnAndRefundService = new ProcessReturnAndRefundService(returnRepository, inventoryRepository, paymentGateway);
     }
 
     @Test
-    @DisplayName("Should request return, approve, inspect item, restock and process refund")
+    @DisplayName("Should request return, approve, inspect item, restock and process refund via atomic services")
     void shouldHandleCompleteReturnAndRefund() {
         Order order = new Order("ORD-1", "BUY-1", List.of(new OrderItem("P-1", "Prod", new Money(100.00), 1)), new Address("Dest St", "City", "ST", "123", "USA"));
         order.markAsPaid();
@@ -55,13 +61,13 @@ class ReturnRefundServiceTest {
         Inventory inventory = new Inventory("INV-1", "P-1", "WH-1", 10);
         inventoryRepository.save(inventory);
 
-        ReturnRequest req = returnService.requestReturn("RET-1", "ORD-1", "BUY-1", "P-1", ReturnReason.DEFECTIVE);
+        ReturnRequest req = requestReturnService.requestReturn("RET-1", "ORD-1", "BUY-1", "P-1", ReturnReason.DEFECTIVE);
         assertEquals(ReturnStatus.REQUESTED, req.getStatus());
 
-        returnService.approveReturn("RET-1");
+        approveReturnService.approveReturn("RET-1");
         assertEquals(ReturnStatus.APPROVED, returnRepository.findReturnById("RET-1").get().getStatus());
 
-        Refund refund = returnService.processReturnedItemAndRefund("REF-1", "RET-1", "WH-1", true, new Money(100.00));
+        Refund refund = processReturnAndRefundService.processReturnedItemAndRefund("REF-1", "RET-1", "WH-1", true, new Money(100.00));
         assertNotNull(refund);
         assertEquals(RefundStatus.PROCESSED, refund.getStatus());
         assertEquals(ReturnStatus.ITEM_RECEIVED, returnRepository.findReturnById("RET-1").get().getStatus());

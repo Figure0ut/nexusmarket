@@ -21,30 +21,37 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class WarehouseManagementServiceTest {
 
-    private WarehouseManagementService warehouseService;
+    private RegisterWarehouseService registerWarehouseService;
+    private GetWarehouseService getWarehouseService;
+    private ActivateWarehouseService activateWarehouseService;
+    private DeactivateWarehouseService deactivateWarehouseService;
+
     private MockWarehouseRepository warehouseRepository;
 
     @BeforeEach
     void setUp() {
         warehouseRepository = new MockWarehouseRepository();
-        warehouseService = new WarehouseManagementService(warehouseRepository);
+        registerWarehouseService = new RegisterWarehouseService(warehouseRepository);
+        getWarehouseService = new GetWarehouseService(warehouseRepository);
+        activateWarehouseService = new ActivateWarehouseService(warehouseRepository);
+        deactivateWarehouseService = new DeactivateWarehouseService(warehouseRepository);
     }
 
     @Test
-    @DisplayName("Should successfully register, activate and deactivate warehouse when authorized by ADMIN")
+    @DisplayName("Should successfully register, activate and deactivate warehouse when authorized by ADMIN via atomic services")
     void shouldRegisterAndManageWarehouse() {
         User admin = new User("ADM-1", "Admin", "admin@nexusmarket.com", UserRole.ADMIN, UserStatus.ACTIVE);
         Warehouse wh = new Warehouse("WH-1", "Central Hub", new Address("St 1", "City", "ST", "111", "USA"), WarehouseType.MARKETPLACE, "ADM-1", true);
 
-        Warehouse saved = warehouseService.registerWarehouse(wh, admin);
+        Warehouse saved = registerWarehouseService.registerWarehouse(wh, admin);
         assertNotNull(saved);
-        assertTrue(warehouseService.getWarehouse("WH-1").isActive());
+        assertTrue(getWarehouseService.getWarehouse("WH-1").isActive());
 
-        warehouseService.deactivateWarehouse("WH-1");
-        assertFalse(warehouseService.getWarehouse("WH-1").isActive());
+        deactivateWarehouseService.deactivateWarehouse("WH-1");
+        assertFalse(getWarehouseService.getWarehouse("WH-1").isActive());
 
-        warehouseService.activateWarehouse("WH-1");
-        assertTrue(warehouseService.getWarehouse("WH-1").isActive());
+        activateWarehouseService.activateWarehouse("WH-1");
+        assertTrue(getWarehouseService.getWarehouse("WH-1").isActive());
     }
 
     @Test
@@ -54,7 +61,7 @@ class WarehouseManagementServiceTest {
         Warehouse wh = new Warehouse("WH-1", "Central Hub", new Address("St 1", "City", "ST", "111", "USA"), WarehouseType.MARKETPLACE, "ADM-1", true);
 
         assertThrows(InvalidDomainStateException.class, () ->
-                warehouseService.registerWarehouse(wh, buyer)
+                registerWarehouseService.registerWarehouse(wh, buyer)
         );
     }
 

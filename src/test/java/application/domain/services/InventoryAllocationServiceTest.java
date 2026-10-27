@@ -20,7 +20,14 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class InventoryAllocationServiceTest {
 
-    private InventoryAllocationService allocationService;
+    private AddStockService addStockService;
+    private ReserveStockService reserveStockService;
+    private ReleaseStockReservationService releaseStockReservationService;
+    private ConfirmSaleStockService confirmSaleStockService;
+    private MarkStockDamagedService markStockDamagedService;
+    private GetInventoryService getInventoryService;
+    private GetTotalAvailableStockService getTotalAvailableStockService;
+
     private MockInventoryRepository inventoryRepository;
     private MockWarehouseRepository warehouseRepository;
 
@@ -28,30 +35,37 @@ class InventoryAllocationServiceTest {
     void setUp() {
         inventoryRepository = new MockInventoryRepository();
         warehouseRepository = new MockWarehouseRepository();
-        allocationService = new InventoryAllocationService(inventoryRepository, warehouseRepository);
+
+        addStockService = new AddStockService(inventoryRepository, warehouseRepository);
+        reserveStockService = new ReserveStockService(inventoryRepository);
+        releaseStockReservationService = new ReleaseStockReservationService(inventoryRepository);
+        confirmSaleStockService = new ConfirmSaleStockService(inventoryRepository);
+        markStockDamagedService = new MarkStockDamagedService(inventoryRepository);
+        getInventoryService = new GetInventoryService(inventoryRepository);
+        getTotalAvailableStockService = new GetTotalAvailableStockService(inventoryRepository);
     }
 
     @Test
-    @DisplayName("Should successfully add stock, reserve, and confirm sale")
+    @DisplayName("Should successfully add stock, reserve, and confirm sale via atomic services")
     void shouldManageStockOperations() {
         Warehouse warehouse = new Warehouse("WH-1", "Central WH", new Address("St", "City", "ST", "1", "USA"), WarehouseType.MARKETPLACE, "ADM-1", true);
         warehouseRepository.save(warehouse);
 
-        allocationService.addStock("INV-1", "P-1", "WH-1", 50);
-        assertEquals(50, allocationService.getTotalAvailableStock("P-1"));
+        addStockService.addStock("INV-1", "P-1", "WH-1", 50);
+        assertEquals(50, getTotalAvailableStockService.getTotalAvailableStock("P-1"));
 
-        allocationService.reserveStock("P-1", "WH-1", 20);
-        Inventory inv = allocationService.getInventory("P-1", "WH-1");
+        reserveStockService.reserveStock("P-1", "WH-1", 20);
+        Inventory inv = getInventoryService.getInventory("P-1", "WH-1");
         assertEquals(30, inv.getAvailableStock().getValue());
         assertEquals(20, inv.getReservedStock().getValue());
 
-        allocationService.confirmSale("P-1", "WH-1", 20);
-        inv = allocationService.getInventory("P-1", "WH-1");
+        confirmSaleStockService.confirmSale("P-1", "WH-1", 20);
+        inv = getInventoryService.getInventory("P-1", "WH-1");
         assertEquals(30, inv.getAvailableStock().getValue());
         assertEquals(0, inv.getReservedStock().getValue());
 
-        allocationService.markStockAsDamaged("P-1", "WH-1", 5);
-        inv = allocationService.getInventory("P-1", "WH-1");
+        markStockDamagedService.markStockAsDamaged("P-1", "WH-1", 5);
+        inv = getInventoryService.getInventory("P-1", "WH-1");
         assertEquals(25, inv.getAvailableStock().getValue());
         assertEquals(5, inv.getDamagedStock().getValue());
     }
@@ -63,7 +77,7 @@ class InventoryAllocationServiceTest {
         warehouseRepository.save(warehouse);
 
         assertThrows(InvalidDomainStateException.class, () ->
-                allocationService.addStock("INV-1", "P-1", "WH-1", 50)
+                addStockService.addStock("INV-1", "P-1", "WH-1", 50)
         );
     }
 

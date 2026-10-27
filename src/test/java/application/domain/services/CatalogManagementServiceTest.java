@@ -23,38 +23,51 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class CatalogManagementServiceTest {
 
-    private CatalogManagementService service;
+    private RegisterProductService registerProductService;
+    private GetProductService getProductService;
+    private PublishProductService publishProductService;
+    private SuspendProductService suspendProductService;
+    private DiscontinueProductService discontinueProductService;
+    private UpdateProductPriceService updateProductPriceService;
+    private AddProductVariantService addProductVariantService;
+
     private InMemoryProductRepository repository;
 
     @BeforeEach
     void setUp() {
         repository = new InMemoryProductRepository();
-        service = new CatalogManagementService(repository);
+        registerProductService = new RegisterProductService(repository);
+        getProductService = new GetProductService(repository);
+        publishProductService = new PublishProductService(repository);
+        suspendProductService = new SuspendProductService(repository);
+        discontinueProductService = new DiscontinueProductService(repository);
+        updateProductPriceService = new UpdateProductPriceService(repository);
+        addProductVariantService = new AddProductVariantService(repository);
     }
 
     @Test
-    @DisplayName("Should successfully register product and update lifecycle statuses")
+    @DisplayName("Should successfully register product and update lifecycle statuses via atomic services")
     void shouldRegisterAndManageProductLifecycle() {
         Product product = new Product("P-001", new SKU("SKU-100"), "SEL-1", "Gaming Laptop", "Fast laptop",
                 new Money(1200.00), ProductType.PHYSICAL, ProductStatus.DRAFT, new ArrayList<>());
 
-        service.registerProduct(product);
-        assertEquals(ProductStatus.DRAFT, service.getProduct("P-001").getStatus());
+        registerProductService.registerProduct(product);
+        assertEquals(ProductStatus.DRAFT, getProductService.getProduct("P-001").getStatus());
 
-        service.publishProduct("P-001");
-        assertEquals(ProductStatus.PUBLISHED, service.getProduct("P-001").getStatus());
+        publishProductService.publishProduct("P-001");
+        assertEquals(ProductStatus.PUBLISHED, getProductService.getProduct("P-001").getStatus());
 
-        service.suspendProduct("P-001");
-        assertEquals(ProductStatus.SUSPENDED, service.getProduct("P-001").getStatus());
+        suspendProductService.suspendProduct("P-001");
+        assertEquals(ProductStatus.SUSPENDED, getProductService.getProduct("P-001").getStatus());
 
-        service.updatePrice("P-001", new Money(1150.00));
-        assertEquals(new Money(1150.00), service.getProduct("P-001").getPrice());
+        updateProductPriceService.updatePrice("P-001", new Money(1150.00));
+        assertEquals(new Money(1150.00), getProductService.getProduct("P-001").getPrice());
 
-        service.addVariant("P-001", new ProductVariant("RAM", "32GB"));
-        assertEquals(1, service.getProduct("P-001").getVariants().size());
+        addProductVariantService.addVariant("P-001", new ProductVariant("RAM", "32GB"));
+        assertEquals(1, getProductService.getProduct("P-001").getVariants().size());
 
-        service.discontinueProduct("P-001");
-        assertEquals(ProductStatus.DISCONTINUED, service.getProduct("P-001").getStatus());
+        discontinueProductService.discontinueProduct("P-001");
+        assertEquals(ProductStatus.DISCONTINUED, getProductService.getProduct("P-001").getStatus());
     }
 
     @Test
@@ -65,14 +78,14 @@ class CatalogManagementServiceTest {
         Product p2 = new Product("P-002", new SKU("SKU-100"), "SEL-1", "Product 2", "Desc",
                 new Money(60.00), ProductType.DIGITAL, ProductStatus.DRAFT, new ArrayList<>());
 
-        service.registerProduct(p1);
-        assertThrows(DomainException.class, () -> service.registerProduct(p2));
+        registerProductService.registerProduct(p1);
+        assertThrows(DomainException.class, () -> registerProductService.registerProduct(p2));
     }
 
     @Test
     @DisplayName("Should throw EntityNotFoundException when querying non-existent product")
     void shouldThrowWhenProductNotFound() {
-        assertThrows(EntityNotFoundException.class, () -> service.getProduct("NON-EXISTENT"));
+        assertThrows(EntityNotFoundException.class, () -> getProductService.getProduct("NON-EXISTENT"));
     }
 
     private static class InMemoryProductRepository implements ProductRepositoryPort {

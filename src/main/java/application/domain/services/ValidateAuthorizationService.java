@@ -9,7 +9,10 @@ import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 
-public class AuthorizationService {
+/**
+ * Atomic domain service responsible exclusively for validating user authorization against the platform Responsibility Matrix.
+ */
+public class ValidateAuthorizationService {
 
     public enum BusinessProcess {
         SELLER_REGISTRATION,

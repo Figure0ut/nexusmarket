@@ -35,7 +35,7 @@ src/main/java/application/domain/
 ├── exceptions/     <-- Domain Exceptions (DomainException, EntityNotFoundException, etc.)
 ├── models/         <-- Domain Entities & Aggregates with Getters & Setters (User, Buyer, Seller, Product, Order, etc.)
 ├── ports/out/      <-- Outbound Port Contracts (UserRepositoryPort, ProductRepositoryPort, etc.)
-├── services/       <-- Domain Services (UserAuthenticationService, SellerIncorporationService, etc.)
+├── services/       <-- Atomic Domain Services (CreateInvoiceService, CheckoutCartService, RegisterProductService, etc.)
 └── valueobjects/   <-- Non-Enum Value Objects with Getters & Setters (Money, Address, Email, SKU, TaxIdentifier, StockQuantity, ProductVariant)
 ```
 

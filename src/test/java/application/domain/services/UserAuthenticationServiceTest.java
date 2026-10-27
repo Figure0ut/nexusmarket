@@ -3,7 +3,6 @@ package application.domain.services;
 import application.domain.enums.UserRole;
 import application.domain.enums.UserStatus;
 import application.domain.exceptions.DomainException;
-import application.domain.exceptions.EntityNotFoundException;
 import application.domain.exceptions.InvalidDomainStateException;
 import application.domain.models.User;
 import application.domain.ports.out.UserRepositoryPort;
@@ -20,42 +19,49 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class UserAuthenticationServiceTest {
 
-    private UserAuthenticationService authService;
+    private AuthenticateUserService authenticateUserService;
+    private RegisterUserService registerUserService;
+    private BlockUserService blockUserService;
+    private ActivateUserService activateUserService;
+
     private MockUserRepository userRepository;
 
     @BeforeEach
     void setUp() {
         userRepository = new MockUserRepository();
-        authService = new UserAuthenticationService(userRepository);
+        authenticateUserService = new AuthenticateUserService(userRepository);
+        registerUserService = new RegisterUserService(userRepository);
+        blockUserService = new BlockUserService(userRepository);
+        activateUserService = new ActivateUserService(userRepository);
     }
 
     @Test
-    @DisplayName("Should authenticate active user and reject blocked user")
+    @DisplayName("Should authenticate active user and reject blocked user via atomic services")
     void shouldAuthenticateAndEnforceStatus() {
         User activeUser = new User("U-1", "John Doe", new Email("john@nexusmarket.com"), UserRole.BUYER, UserStatus.ACTIVE);
         userRepository.save(activeUser);
 
-        User authenticated = authService.authenticate(new Email("john@nexusmarket.com"));
+        User authenticated = authenticateUserService.authenticate(new Email("john@nexusmarket.com"));
         assertNotNull(authenticated);
         assertEquals("U-1", authenticated.getIdentifier());
 
-        authService.blockUser("U-1");
+        blockUserService.blockUser("U-1");
         assertThrows(InvalidDomainStateException.class, () ->
-                authService.authenticate(new Email("john@nexusmarket.com"))
+                authenticateUserService.authenticate(new Email("john@nexusmarket.com"))
         );
     }
 
     @Test
-    @DisplayName("Should register new user and reject duplicates")
+    @DisplayName("Should register new user and reject duplicates via atomic services")
     void shouldRegisterAndRejectDuplicates() {
         User user = new User("U-1", "John Doe", new Email("john@nexusmarket.com"), UserRole.BUYER, UserStatus.ACTIVE);
-        authService.registerUser(user);
+        registerUserService.registerUser(user);
 
         User dupId = new User("U-1", "Other", new Email("other@nexusmarket.com"), UserRole.BUYER, UserStatus.ACTIVE);
-        assertThrows(DomainException.class, () -> authService.registerUser(dupId));
+        assertThrows(DomainException.class, () -> registerUserService.registerUser(dupId));
 
         User dupEmail = new User("U-2", "Other", new Email("john@nexusmarket.com"), UserRole.BUYER, UserStatus.ACTIVE);
-        assertThrows(DomainException.class, () -> authService.registerUser(dupEmail));
+        assertThrows(DomainException.class, () -> registerUserService.registerUser(dupEmail));
     }
 
     private static class MockUserRepository implements UserRepositoryPort {
