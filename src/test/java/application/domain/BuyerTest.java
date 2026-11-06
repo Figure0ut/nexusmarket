@@ -12,51 +12,42 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class BuyerTest {
 
-    @Test
-    @DisplayName("Should successfully create Buyer entity with main address and commercial status")
-    void shouldCreateBuyerWithValidData() {
-        Buyer buyer = new Buyer("BUY-101", "Bob Buyer", "bob@nexusmarket.com", "123 Main St", "STANDARD");
+    private Buyer buyer() {
+        return new Buyer("BUY-101", "CC-101", "Bob Buyer", "bob@nexusmarket.com", "123 Main St", "ENABLED");
+    }
 
-        assertEquals("BUY-101", buyer.getIdentifier());
-        assertEquals("Bob Buyer", buyer.getFullName());
-        assertEquals("bob@nexusmarket.com", buyer.getEmail().getValue());
+    @Test
+    @DisplayName("A buyer always has the BUYER role and a mandatory main address")
+    void buyerHasBuyerRole() {
+        Buyer buyer = buyer();
         assertEquals(UserRole.BUYER, buyer.getRole());
-        assertEquals(UserStatus.ACTIVE, buyer.getStatus());
         assertEquals("123 Main St", buyer.getMainAddress().getStreet());
-        assertEquals("STANDARD", buyer.getCommercialStatus());
+        assertThrows(IllegalArgumentException.class, () -> buyer.setRole(UserRole.ADMIN));
+    }
+
+    @Test
+    @DisplayName("Additional addresses are optional and cannot duplicate the main address")
+    void additionalAddresses() {
+        Buyer buyer = buyer();
         assertTrue(buyer.getAdditionalAddresses().isEmpty());
-    }
-
-    @Test
-    @DisplayName("Should update main address and add secondary addresses")
-    void shouldManageBuyerAddresses() {
-        Buyer buyer = new Buyer("BUY-101", "Bob Buyer", "bob@nexusmarket.com", "123 Main St", "STANDARD");
-        buyer.updateMainAddress(new Address("456 Broadway Ave"));
-        buyer.addSecondaryAddress(new Address("789 Secondary St"));
-
-        assertEquals("456 Broadway Ave", buyer.getMainAddress().getStreet());
+        buyer.addSecondaryAddress(new Address("456 Office Ave"));
         assertEquals(1, buyer.getAdditionalAddresses().size());
-        assertEquals("789 Secondary St", buyer.getAdditionalAddresses().get(0).getStreet());
+        assertThrows(IllegalArgumentException.class, () -> buyer.addSecondaryAddress(new Address("123 Main St")));
     }
 
     @Test
-    @DisplayName("Should allow Buyer to perform self-service operations on their own account")
-    void shouldAllowBuyerSelfServiceOperation() {
-        Buyer buyer = new Buyer("BUY-101", "Bob Buyer", "bob@nexusmarket.com", "123 Main St", "STANDARD");
+    @DisplayName("Commercial status is mandatory")
+    void commercialStatusMandatory() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new Buyer("BUY-1", "CC-1", "Name", "a@b.com", "Street 1", " "));
+    }
 
-        // Buyer can operate on themselves (same identifier)
+    @Test
+    @DisplayName("A buyer cannot operate on another buyer's account")
+    void buyerCannotOperateOnOthers() {
+        Buyer buyer = buyer();
+        User other = new User("BUY-102", "CC-102", "Charlie", "charlie@nexusmarket.com", UserRole.BUYER, UserStatus.ACTIVE);
+        assertThrows(IllegalStateException.class, () -> buyer.validateOperation(other));
         assertDoesNotThrow(() -> buyer.validateOperation(buyer));
-    }
-
-    @Test
-    @DisplayName("Should throw IllegalStateException when Buyer attempts to administer another user")
-    void shouldRejectBuyerAdminOperationOnOtherUser() {
-        Buyer buyer = new Buyer("BUY-101", "Bob Buyer", "bob@nexusmarket.com", "123 Main St", "STANDARD");
-        User targetBuyer = new User("BUY-102", "Charlie Buyer", "charlie@nexusmarket.com", UserRole.BUYER, UserStatus.ACTIVE);
-
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
-                buyer.validateOperation(targetBuyer)
-        );
-        assertTrue(exception.getMessage().contains("is not authorized to perform administrative operations"));
     }
 }

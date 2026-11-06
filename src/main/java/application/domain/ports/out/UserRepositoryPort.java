@@ -3,6 +3,7 @@ package application.domain.ports.out;
 import application.domain.models.User;
 import application.domain.valueobjects.Email;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepositoryPort {
@@ -10,4 +11,6 @@ public interface UserRepositoryPort {
     Optional<User> findByEmail(Email email);
     User save(User user);
     boolean existsByEmail(Email email);
+    boolean existsByIdentityDocument(String identityDocument);
+    List<User> findAll();
 }

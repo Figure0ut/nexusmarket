@@ -34,6 +34,17 @@ public class JpaInventoryRepositoryAdapter implements InventoryRepositoryPort {
     }
 
     @Override
+    public List<Inventory> findByWarehouseId(String warehouseId) {
+        if (warehouseId == null) return List.of();
+        return jpaRepository.findByWarehouseId(warehouseId).stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public List<Inventory> findAll() {
+        return jpaRepository.findAll().stream().map(this::toDomain).toList();
+    }
+
+    @Override
     public Inventory save(Inventory inventory) {
         InventoryEntity entity = toEntity(inventory);
         InventoryEntity saved = jpaRepository.save(entity);

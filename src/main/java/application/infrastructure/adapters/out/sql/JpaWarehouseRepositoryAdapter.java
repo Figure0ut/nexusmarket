@@ -34,6 +34,11 @@ public class JpaWarehouseRepositoryAdapter implements WarehouseRepositoryPort {
     }
 
     @Override
+    public List<Warehouse> findAll() {
+        return jpaRepository.findAll().stream().map(this::toDomain).toList();
+    }
+
+    @Override
     public Warehouse save(Warehouse warehouse) {
         WarehouseEntity entity = toEntity(warehouse);
         WarehouseEntity saved = jpaRepository.save(entity);

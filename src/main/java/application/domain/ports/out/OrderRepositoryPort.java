@@ -11,5 +11,6 @@ public interface OrderRepositoryPort {
     Cart saveCart(Cart cart);
     Optional<Order> findOrderById(String orderId);
     List<Order> findOrdersByBuyerId(String buyerId);
+    List<Order> findAllOrders();
     Order saveOrder(Order order);
 }

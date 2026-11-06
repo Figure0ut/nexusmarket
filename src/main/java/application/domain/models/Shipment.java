@@ -106,6 +106,9 @@ public class Shipment {
     }
 
     public void dispatch(String carrier, String trackingNumber) {
+        if (status != ShipmentStatus.PREPARING) {
+            throw new IllegalStateException("Shipment must be PREPARING to be dispatched.");
+        }
         if (carrier == null || carrier.trim().isEmpty()) {
             throw new IllegalArgumentException("Carrier name cannot be null or empty.");
         }
@@ -122,10 +125,6 @@ public class Shipment {
             throw new IllegalStateException("Shipment must be IN_TRANSIT to confirm delivery.");
         }
         setStatus(ShipmentStatus.DELIVERED);
-    }
-
-    public void markAsFailed() {
-        setStatus(ShipmentStatus.FAILED);
     }
 
     @Override

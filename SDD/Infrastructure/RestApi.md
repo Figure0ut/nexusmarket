@@ -1,117 +1,73 @@
-# Inbound REST API Specification: NexusMarket
+# Inbound REST API Specification
 
-## 1. Context & Architectural Role
-In accordance with **Hexagonal Architecture (Ports and Adapters)**, the REST Controllers in `application.infrastructure.adapters.in.rest.controllers` serve as the **Inbound (Driving) Adapters**. They accept HTTP JSON requests, translate them to invocations of pure Java Atomic Domain Services in `application.domain.services`, and format domain responses into DTOs.
+## 1. Architectural Role
+REST controllers (`application.infrastructure.adapters.in.rest.controllers`) are the **inbound (driving) adapters** of the Hexagonal Architecture. Each endpoint:
 
----
+1. resolves the **authenticated user** (`AuthenticatedUserResolver`, RG-01),
+2. checks **authorization** with the domain `ValidateAuthorizationService` (matrix of section 12, RG-03),
+3. calls one or more **atomic domain services**,
+4. records the operation in the **audit trail** (`AuditTrail` → MongoDB),
+5. converts the result to a DTO.
 
-## 2. Global Error Handling
-The `@RestControllerAdvice` [`GlobalExceptionHandler`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/infrastructure/adapters/in/rest/advice/GlobalExceptionHandler.java) translates pure domain exceptions to standard HTTP error responses:
+## 2. Authentication (RG-01)
+The specification leaves technical authentication mechanisms out of scope (section 3.2) and defines the email as the main access channel of a user (Domain 1). Therefore every request identifies its user with the header:
 
-| Domain Exception | HTTP Status Code | Description |
-| :--- | :--- | :--- |
-| `EntityNotFoundException` | `404 Not Found` | Entity requested by ID was not found |
-| `InvalidDomainStateException` | `400 Bad Request` | Illegal business state transition or precondition failure |
-| `DomainException` | `409 Conflict` | Duplicate unique constraint violation (SKU, Email, User ID) |
-| `IllegalArgumentException` / `IllegalStateException` | `400 Bad Request` | Missing or invalid required parameters |
-| `Exception` | `500 Internal Server Error` | Unexpected system failure |
+```
+X-User-Email: admin@nexusmarket.com
+```
 
-### Error Response Schema
+The user must exist and be `ACTIVE`. Only two operations do not require it: `POST /api/auth/login` and `POST /api/users/register` (buyer self-registration, which creates the account itself).
+An initial Administrator (`admin@nexusmarket.com`) is created at startup (configurable in `application.properties`).
+
+## 3. Error Handling (`GlobalExceptionHandler`)
+
+| Situation | HTTP status |
+| :--- | :--- |
+| Missing, unknown or non-active user (`AuthenticationRequiredException`) | `401 Unauthorized` |
+| Operation outside the role / data of another user (`AuthorizationException`) | `403 Forbidden` |
+| Entity not found (`EntityNotFoundException`) | `404 Not Found` |
+| Duplicate identifier, identity document, email, SKU, ID (`DomainException`) | `409 Conflict` |
+| Invalid state transition or business rule (`InvalidDomainStateException`, `IllegalStateException`, `IllegalArgumentException`) | `400 Bad Request` |
+| Unexpected error | `500 Internal Server Error` |
+
 ```json
-{
-  "timestamp": "2026-10-27T14:45:00",
-  "status": 404,
-  "error": "Not Found",
-  "message": "User not found with identifier: U-999",
-  "path": "/api/users/U-999"
-}
+{ "timestamp": "2026-11-06T10:00:00", "status": 403, "error": "Forbidden",
+  "message": "Authorization Failure (RG-03): User 'SUP-001' with role 'SUPERVISOR' is not authorized for process 'SELLER_REGISTRATION'.",
+  "path": "/api/sellers" }
 ```
 
----
+## 4. Endpoint Catalog
 
-## 3. Resource Endpoints Catalog
+| Area | Method & path | Allowed roles |
+| :--- | :--- | :--- |
+| Auth | `POST /api/auth/login` | public |
+| Users | `POST /api/users/register` | public (buyer self-registration) |
+| | `POST /api/users` | ADMIN (internal users: ADMIN, OPERATOR_LOGISTIC, SUPERVISOR) |
+| | `GET /api/users/me` | any |
+| | `GET /api/users` · `GET /api/users/{id}` | ADMIN, SUPERVISOR (or self) |
+| | `PUT /api/users/{id}/block` · `/activate` | ADMIN |
+| | `PUT /api/users/{id}/main-address` · `POST /api/users/{id}/additional-addresses` | the buyer itself |
+| Sellers | `POST /api/sellers` (seller + first warehouse) | ADMIN |
+| | `GET /api/sellers/{id}/products` | the seller itself, SUPERVISOR |
+| Warehouses | `POST /api/warehouses` · `PUT /{id}/activate` · `/deactivate` · `/location` | ADMIN |
+| | `GET /api/warehouses` · `/{id}` · `/owner/{ownerId}` | ADMIN, SUPERVISOR, OPERATOR_LOGISTIC, SELLER |
+| Catalog | `POST /api/products` | SELLER |
+| | `GET /api/products` (PUBLISHED only) · `GET /api/products/{id}` | any |
+| | `PUT /api/products/{id}/publish` · `/suspend` · `/discontinue` · `/price` · `POST /{id}/variants` | owner SELLER |
+| Inventory | `POST /api/inventory/add` (INFLOW) · `POST /api/inventory/mark-damaged` (ADJUSTMENT) | SELLER (own products), OPERATOR_LOGISTIC |
+| | `GET /api/inventory?productId=&warehouseId=` · `/product/{id}` · `/total-available/{id}` | SELLER (own), OPERATOR_LOGISTIC, SUPERVISOR |
+| Cart | `GET /api/carts/{buyerId}` · `POST /{buyerId}/items` · `DELETE /{buyerId}/items/{productId}` · `DELETE /{buyerId}` | the buyer itself |
+| Orders | `POST /api/orders/checkout/{buyerId}` (RESERVE) · `POST /api/orders/{id}/pay` (invoice) | the buyer itself |
+| | `GET /api/orders` · `/{id}` · `/buyer/{buyerId}` | BUYER (own), SELLER (with its products), OPERATOR_LOGISTIC, SUPERVISOR |
+| Invoices | `GET /api/invoices/{id}` · `/order/{orderId}` | buyer owner, ADMIN, SUPERVISOR |
+| Shipments | `POST /api/shipments/prepare` · `PUT /{id}/dispatch` (OUTFLOW_SALE) · `PUT /{id}/confirm-delivery` | OPERATOR_LOGISTIC |
+| | `GET /api/shipments/{id}` | OPERATOR_LOGISTIC, SUPERVISOR, buyer owner |
+| Returns | `POST /api/returns/request` | buyer owner |
+| | `PUT /api/returns/{id}/approve` · `/reject` · `POST /api/returns/process-refund` (RETURN) | ADMIN |
+| | `GET /api/returns/{id}` | buyer owner, ADMIN, SUPERVISOR |
+| Reports | `GET /api/reports/summary` | ADMIN, SUPERVISOR |
+| Audit | `GET /api/audit` · `GET /api/audit/aggregate/{id}` | ADMIN, SUPERVISOR |
 
-### 1. User Management (`/api/users`)
-* `POST /api/users/register`: Registers a new user (`BUYER`, `SELLER`, `ADMIN`, `OPERATOR_LOGISTIC`, `SUPERVISOR`). Returns `201 Created`.
-* `POST /api/users/authenticate?email={email}`: Validates user status and returns identity details.
-* `GET /api/users/{identifier}`: Retrieves user by unique ID.
-* `PUT /api/users/{identifier}/block`: Transitions user status to `BLOCKED`. Returns `204 No Content`.
-* `PUT /api/users/{identifier}/activate`: Transitions user status to `ACTIVE`. Returns `204 No Content`.
-
-### 2. Seller Incorporation (`/api/sellers`)
-* `POST /api/sellers/{sellerId}/incorporate`: Admin incorporates a pending seller account. Returns `204 No Content`.
-
-### 3. Product Catalog (`/api/products`)
-* `POST /api/products`: Registers a new product (`PHYSICAL` or `DIGITAL`) with unique SKU. Returns `201 Created`.
-* `GET /api/products/{productId}`: Retrieves product details and variants.
-* `PUT /api/products/{productId}/publish`: Transitions product to `PUBLISHED`.
-* `PUT /api/products/{productId}/suspend`: Transitions product to `SUSPENDED`.
-* `PUT /api/products/{productId}/discontinue`: Permanently transitions product to `DISCONTINUED`.
-* `PUT /api/products/{productId}/price`: Updates unit price ($price > 0$).
-* `POST /api/products/{productId}/variants`: Adds a variant attribute (e.g., Color, Size).
-
-### 4. Warehouses (`/api/warehouses`)
-* `POST /api/warehouses`: Admin registers a warehouse facility (`MARKETPLACE` or `SELLER`).
-* `GET /api/warehouses/{warehouseId}`: Retrieves warehouse by ID.
-* `PUT /api/warehouses/{warehouseId}/activate`: Activates warehouse.
-* `PUT /api/warehouses/{warehouseId}/deactivate`: Deactivates warehouse.
-* `PUT /api/warehouses/{warehouseId}/location`: Updates physical location.
-* `GET /api/warehouses/owner/{ownerId}`: Queries all warehouses owned by an entity.
-
-### 5. Inventory (`/api/inventory`)
-* `POST /api/inventory/add`: Adds stock to a warehouse (`INFLOW`).
-* `GET /api/inventory?productId={pId}&warehouseId={wId}`: Queries inventory levels.
-* `GET /api/inventory/total-available/{productId}`: Returns total available units across all warehouses.
-* `POST /api/inventory/reserve`: Reserves stock for orders (`RESERVE`).
-* `POST /api/inventory/release`: Releases reserved stock back to available (`RETURN`).
-* `POST /api/inventory/confirm-sale`: Deducts reserved stock on sale (`OUTFLOW_SALE`).
-* `POST /api/inventory/mark-damaged`: Marks damaged units (`ADJUSTMENT`).
-
-### 6. Shopping Cart (`/api/carts`)
-* `GET /api/carts/{buyerId}`: Retrieves or creates buyer cart.
-* `POST /api/carts/{buyerId}/items`: Adds product item with quantity accumulation.
-* `DELETE /api/carts/{buyerId}/items/{productId}`: Removes item from cart.
-* `DELETE /api/carts/{buyerId}`: Clears cart.
-
-### 7. Orders & Checkout (`/api/orders`)
-* `POST /api/orders/checkout/{buyerId}`: Converts cart into an Order starting in `PENDING_PAYMENT`.
-* `POST /api/orders/{orderId}/pay`: Submits payment token to gateway, marks order `PAID`, sends email notification.
-* `PUT /api/orders/{orderId}/cancel`: Cancels order.
-* `GET /api/orders/{orderId}`: Retrieves order by ID.
-* `GET /api/orders/buyer/{buyerId}`: Queries orders for a buyer.
-
-### 8. Invoicing (`/api/invoices`)
-* `POST /api/invoices`: Issues a legal tax invoice for a paid order.
-* `GET /api/invoices/{invoiceId}`: Retrieves invoice by ID.
-* `PUT /api/invoices/{invoiceId}/pay`: Marks invoice paid.
-* `PUT /api/invoices/{invoiceId}/cancel`: Cancels invoice.
-
-### 9. Logistics & Shipments (`/api/shipments`)
-* `POST /api/shipments/prepare`: Prepares shipment for paid order from active warehouse.
-* `GET /api/shipments/{shipmentId}`: Retrieves shipment by ID.
-* `PUT /api/shipments/{shipmentId}/dispatch`: Assigns carrier and tracking number, marks order `DISPATCHED`.
-* `PUT /api/shipments/{shipmentId}/confirm-delivery`: Finalizes delivery and transitions order to `DELIVERED_FINALIZED`.
-* `PUT /api/shipments/{shipmentId}/report-failed`: Records delivery failure.
-
-### 10. Returns & Refunds (`/api/returns`)
-* `POST /api/returns/request`: Initiates return on delivered order.
-* `GET /api/returns/{returnId}`: Retrieves return request by ID.
-* `PUT /api/returns/{returnId}/approve`: Approves return.
-* `PUT /api/returns/{returnId}/reject`: Rejects return.
-* `POST /api/returns/process-refund`: Re-inspects item (restock vs damage) and executes gateway refund.
-
-### 11. System Audit Logs (`/api/audit`)
-* `GET /api/audit`: Retrieves all platform audit logs.
-* `GET /api/audit/aggregate/{aggregateId}`: Retrieves audit logs for a specific target aggregate.
-
----
-
-## 4. Terminal Execution & Verification
-The platform can be demonstrated entirely from the terminal using the provided shell script:
-```bash
-# Terminal 1: Start application
-mvn spring-boot:run
-
-# Terminal 2: Run automated 24-step end-to-end curl demonstration
-./test-api.sh
-```
+## 5. Testing the API
+- **Postman**: import `postman/NexusMarket.postman_collection.json` and run the folders in order on a freshly started server.
+- **Terminal**: `./mvnw spring-boot:run` and, in another terminal, `./test-api.sh` (42 steps of the business flow, including negative cases).

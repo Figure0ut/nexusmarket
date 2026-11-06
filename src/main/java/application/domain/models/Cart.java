@@ -1,5 +1,6 @@
 package application.domain.models;
 
+import application.domain.enums.OrderStatus;
 import application.domain.valueobjects.Money;
 
 import java.util.ArrayList;
@@ -71,6 +72,17 @@ public class Cart {
         } else {
             items.add(new CartItem(productId, unitPrice, quantity));
         }
+    }
+
+    /**
+     * The cart is the first stage of the order lifecycle (Domain 7: "Cart").
+     */
+    public OrderStatus getStatus() {
+        return OrderStatus.CART;
+    }
+
+    public boolean isEmpty() {
+        return items.isEmpty();
     }
 
     public void removeItem(String productId) {

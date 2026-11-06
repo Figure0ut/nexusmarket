@@ -1,0 +1,1993 @@
+{
+  "info": {
+    "name": "NexusMarket API",
+    "description": "Requests in the order of the business flow (section 6.1). Run the folders top to bottom on a fresh server. Every request except login and buyer self-registration sends the X-User-Email header (RG-01). The initial administrator admin@nexusmarket.com is created at startup.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@nexusmarket.com"
+    },
+    {
+      "key": "sellerEmail",
+      "value": "seller@techstore.com"
+    },
+    {
+      "key": "buyerEmail",
+      "value": "buyer@mail.com"
+    },
+    {
+      "key": "operatorEmail",
+      "value": "operator@nexusmarket.com"
+    },
+    {
+      "key": "supervisorEmail",
+      "value": "supervisor@nexusmarket.com"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Authentication & Users",
+      "item": [
+        {
+          "name": "Login (initial admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Register Logistics Operator (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{adminEmail}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"OP-001\",\n  \"identityDocument\": \"CC-2000000001\",\n  \"fullName\": \"Olivia Operator\",\n  \"email\": \"{{operatorEmail}}\",\n  \"role\": \"OPERATOR_LOGISTIC\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Register Supervisor (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{adminEmail}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"SUP-001\",\n  \"identityDocument\": \"CC-3000000001\",\n  \"fullName\": \"Sam Supervisor\",\n  \"email\": \"{{supervisorEmail}}\",\n  \"role\": \"SUPERVISOR\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Buyer self-registration (no header)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"BUY-001\",\n  \"identityDocument\": \"CC-4000000001\",\n  \"fullName\": \"Bob Buyer\",\n  \"email\": \"{{buyerEmail}}\",\n  \"mainAddress\": \"742 Evergreen Terrace, Springfield\",\n  \"additionalAddresses\": [\n    \"Office 12, Main St\"\n  ],\n  \"commercialStatus\": \"ENABLED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Who am I",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{buyerEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List users (admin / supervisor)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{adminEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get user",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{adminEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/BUY-001",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "BUY-001"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Buyer updates main address",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{buyerEmail}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/BUY-001/main-address",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "BUY-001",
+                "main-address"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address\": \"10 Downing St\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Buyer adds additional address",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{buyerEmail}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/BUY-001/additional-addresses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "BUY-001",
+                "additional-addresses"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address\": \"Beach House 7\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Block user (admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{adminEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/BUY-001/block",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "BUY-001",
+                "block"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Activate user (admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{adminEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/BUY-001/activate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "BUY-001",
+                "activate"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Sellers & Warehouses",
+      "item": [
+        {
+          "name": "Incorporate seller + first warehouse (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{adminEmail}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sellers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sellers"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"SEL-001\",\n  \"identityDocument\": \"NIT-900123456\",\n  \"fullName\": \"Tech Store\",\n  \"email\": \"{{sellerEmail}}\",\n  \"taxIdentifier\": \"TAX-900123456\",\n  \"corporateName\": \"Tech Store S.A.S.\",\n  \"firstWarehouse\": {\n    \"warehouseId\": \"WH-SEL-001\",\n    \"name\": \"Tech Store Warehouse\",\n    \"location\": \"Industrial Zone 5, Bogota\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Register marketplace warehouse (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{adminEmail}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/warehouses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "warehouses"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"warehouseId\": \"WH-MKT-001\",\n  \"name\": \"NexusMarket Hub\",\n  \"location\": \"Central Avenue 100, Bogota\",\n  \"type\": \"MARKETPLACE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Register additional seller warehouse (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{adminEmail}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/warehouses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "warehouses"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"warehouseId\": \"WH-SEL-002\",\n  \"name\": \"Tech Store North\",\n  \"location\": \"North Av 50\",\n  \"type\": \"SELLER\",\n  \"ownerId\": \"SEL-001\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "List warehouses",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{adminEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/warehouses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "warehouses"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get warehouse",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{sellerEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/warehouses/WH-SEL-001",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "warehouses",
+                "WH-SEL-001"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Warehouses by owner",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{sellerEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/warehouses/owner/SEL-001",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "warehouses",
+                "owner",
+                "SEL-001"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update location (admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{adminEmail}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/warehouses/WH-MKT-001/location",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "warehouses",
+                "WH-MKT-001",
+                "location"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address\": \"Central Avenue 200, Bogota\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Deactivate warehouse (admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{adminEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/warehouses/WH-SEL-002/deactivate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "warehouses",
+                "WH-SEL-002",
+                "deactivate"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Activate warehouse (admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{adminEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/warehouses/WH-SEL-002/activate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "warehouses",
+                "WH-SEL-002",
+                "activate"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Catalog",
+      "item": [
+        {
+          "name": "Register physical product (seller)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{sellerEmail}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"PROD-001\",\n  \"sku\": \"LAPTOP-PRO-16\",\n  \"name\": \"Laptop Pro 16\",\n  \"description\": \"16GB RAM, 1TB SSD\",\n  \"price\": 1500.0,\n  \"type\": \"PHYSICAL\",\n  \"status\": \"SUSPENDED\",\n  \"variants\": [\n    {\n      \"name\": \"Color\",\n      \"value\": \"Silver\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Register digital product (seller)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{sellerEmail}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"PROD-002\",\n  \"sku\": \"EBOOK-JAVA\",\n  \"name\": \"Clean Java (e-book)\",\n  \"price\": 25.0,\n  \"type\": \"DIGITAL\",\n  \"status\": \"PUBLISHED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Add variant (seller)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{sellerEmail}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/PROD-001/variants",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "PROD-001",
+                "variants"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Size\",\n  \"value\": \"16 inch\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Publish product (seller)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{sellerEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/PROD-001/publish",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "PROD-001",
+                "publish"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Suspend product (seller)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{sellerEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/PROD-001/suspend",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "PROD-001",
+                "suspend"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update price (seller)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{sellerEmail}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/PROD-001/price",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "PROD-001",
+                "price"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newPrice\": 1450.0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Discontinue product (seller)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{sellerEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/PROD-002/discontinue",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "PROD-002",
+                "discontinue"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Public catalog (PUBLISHED only)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{buyerEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get product",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{buyerEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/PROD-001",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "PROD-001"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Seller products (any status)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{sellerEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sellers/SEL-001/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sellers",
+                "SEL-001",
+                "products"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Inventory",
+      "item": [
+        {
+          "name": "Add stock - INFLOW (seller/operator)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{sellerEmail}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/inventory/add",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "inventory",
+                "add"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"PROD-001\",\n  \"warehouseId\": \"WH-SEL-001\",\n  \"quantity\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Mark damaged - ADJUSTMENT (seller/operator)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{operatorEmail}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/inventory/mark-damaged",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "inventory",
+                "mark-damaged"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"PROD-001\",\n  \"warehouseId\": \"WH-SEL-001\",\n  \"quantity\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get inventory (product + warehouse)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{operatorEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/inventory?productId=PROD-001&warehouseId=WH-SEL-001",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "inventory"
+              ],
+              "query": [
+                {
+                  "key": "productId",
+                  "value": "PROD-001"
+                },
+                {
+                  "key": "warehouseId",
+                  "value": "WH-SEL-001"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Inventory of a product in all warehouses",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{operatorEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/inventory/product/PROD-001",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "inventory",
+                "product",
+                "PROD-001"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Total available stock",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{sellerEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/inventory/total-available/PROD-001",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "inventory",
+                "total-available",
+                "PROD-001"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Cart & Orders",
+      "item": [
+        {
+          "name": "Get cart",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{buyerEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/carts/BUY-001",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "carts",
+                "BUY-001"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add item to cart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{buyerEmail}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/carts/BUY-001/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "carts",
+                "BUY-001",
+                "items"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"PROD-001\",\n  \"quantity\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Add digital item to cart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{buyerEmail}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/carts/BUY-001/items",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "carts",
+                "BUY-001",
+                "items"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"PROD-002\",\n  \"quantity\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Remove item from cart",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{buyerEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/carts/BUY-001/items/PROD-002",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "carts",
+                "BUY-001",
+                "items",
+                "PROD-002"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Clear cart",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{buyerEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/carts/BUY-001",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "carts",
+                "BUY-001"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Checkout (CART -> PENDING_PAYMENT)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{buyerEmail}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/checkout/BUY-001",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "checkout",
+                "BUY-001"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"ORD-001\",\n  \"shippingAddress\": \"742 Evergreen Terrace, Springfield\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Pay order (-> PAID, issues invoice)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{buyerEmail}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/ORD-001/pay",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "ORD-001",
+                "pay"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentToken\": \"tok_visa_4242\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get order",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{buyerEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/ORD-001",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "ORD-001"
+              ]
+            }
+          }
+        },
+        {
+          "name": "My orders / visible orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{sellerEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "orders"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Orders of a buyer",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{operatorEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/buyer/BUY-001",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "buyer",
+                "BUY-001"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Invoice by order",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{buyerEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/invoices/order/ORD-001",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "invoices",
+                "order",
+                "ORD-001"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Invoice by id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{adminEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/invoices/INVOICE-ORD-001",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "invoices",
+                "INVOICE-ORD-001"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Logistics",
+      "item": [
+        {
+          "name": "Prepare shipment (operator)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{operatorEmail}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/shipments/prepare",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "shipments",
+                "prepare"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shipmentId\": \"SHP-001\",\n  \"orderId\": \"ORD-001\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Dispatch (-> DISPATCHED, OUTFLOW_SALE)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{operatorEmail}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/shipments/SHP-001/dispatch",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "shipments",
+                "SHP-001",
+                "dispatch"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"carrier\": \"Servientrega\",\n  \"trackingNumber\": \"SRV-123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Confirm delivery (-> DELIVERED_FINALIZED)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{operatorEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/shipments/SHP-001/confirm-delivery",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "shipments",
+                "SHP-001",
+                "confirm-delivery"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get shipment",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{buyerEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/shipments/SHP-001",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "shipments",
+                "SHP-001"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Returns & Refunds",
+      "item": [
+        {
+          "name": "Request return (buyer)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{buyerEmail}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/returns/request",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "returns",
+                "request"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"returnId\": \"RET-001\",\n  \"orderId\": \"ORD-001\",\n  \"productId\": \"PROD-001\",\n  \"reason\": \"DEFECTIVE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get return",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{buyerEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/returns/RET-001",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "returns",
+                "RET-001"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Approve return (admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{adminEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/returns/RET-001/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "returns",
+                "RET-001",
+                "approve"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reject return (admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{adminEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/returns/RET-001/reject",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "returns",
+                "RET-001",
+                "reject"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Process refund - RETURN movement (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{adminEmail}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/returns/process-refund",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "returns",
+                "process-refund"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refundId\": \"REF-001\",\n  \"returnId\": \"RET-001\",\n  \"reusable\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Reports & Audit",
+      "item": [
+        {
+          "name": "Administrative report (admin / supervisor)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{supervisorEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "reports",
+                "summary"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Full audit trail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{supervisorEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/audit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "audit"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Audit trail of an aggregate",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{supervisorEmail}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/audit/aggregate/ORD-001",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "audit",
+                "aggregate",
+                "ORD-001"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "9. Negative cases (rules)",
+      "item": [
+        {
+          "name": "RG-01: no header -> 401",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            }
+          }
+        },
+        {
+          "name": "RG-03: admin registers product -> 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{adminEmail}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"PROD-X\",\n  \"sku\": \"X\",\n  \"name\": \"X\",\n  \"price\": 1,\n  \"type\": \"DIGITAL\",\n  \"status\": \"PUBLISHED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "RG-03: supervisor registers seller -> 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{supervisorEmail}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/sellers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "sellers"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Buyer manages inventory -> 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{buyerEmail}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/inventory/add",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "inventory",
+                "add"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"PROD-001\",\n  \"warehouseId\": \"WH-SEL-001\",\n  \"quantity\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Duplicate identity document -> 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"BUY-002\",\n  \"identityDocument\": \"CC-4000000001\",\n  \"fullName\": \"Copy\",\n  \"email\": \"copy@mail.com\",\n  \"mainAddress\": \"x\",\n  \"commercialStatus\": \"ENABLED\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Seller as plain user -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{adminEmail}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"SEL-X\",\n  \"identityDocument\": \"NIT-X\",\n  \"fullName\": \"X\",\n  \"email\": \"x@x.com\",\n  \"role\": \"SELLER\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Digital product inventory -> 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "X-User-Email",
+                "value": "{{sellerEmail}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/inventory/add",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "inventory",
+                "add"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"PROD-002\",\n  \"warehouseId\": \"WH-SEL-001\",\n  \"quantity\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

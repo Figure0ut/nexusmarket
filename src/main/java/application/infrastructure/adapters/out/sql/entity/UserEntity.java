@@ -12,6 +12,9 @@ public class UserEntity {
     @Column(name = "identifier", nullable = false, unique = true)
     private String identifier;
 
+    @Column(name = "identity_document", nullable = false, unique = true)
+    private String identityDocument;
+
     @Column(name = "full_name", nullable = false)
     private String fullName;
 
@@ -32,6 +35,11 @@ public class UserEntity {
 
     @Column(name = "commercial_status")
     private String commercialStatus;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "buyer_additional_addresses", joinColumns = @JoinColumn(name = "user_identifier"))
+    @Column(name = "address")
+    private java.util.List<String> additionalAddresses = new java.util.ArrayList<>();
 
     // Seller-specific
     @Column(name = "tax_identifier")
@@ -59,6 +67,12 @@ public class UserEntity {
 
     public String getMainAddress() { return mainAddress; }
     public void setMainAddress(String mainAddress) { this.mainAddress = mainAddress; }
+
+    public String getIdentityDocument() { return identityDocument; }
+    public void setIdentityDocument(String identityDocument) { this.identityDocument = identityDocument; }
+
+    public java.util.List<String> getAdditionalAddresses() { return additionalAddresses; }
+    public void setAdditionalAddresses(java.util.List<String> additionalAddresses) { this.additionalAddresses = additionalAddresses; }
 
     public String getCommercialStatus() { return commercialStatus; }
     public void setCommercialStatus(String commercialStatus) { this.commercialStatus = commercialStatus; }

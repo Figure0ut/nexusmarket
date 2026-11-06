@@ -1,10 +1,12 @@
 package application.infrastructure.adapters.in.rest.dto;
 
-public class IncorporateSellerRequestDto {
-    private String adminIdentifier;
+/**
+ * Incorporation of a seller by the Administrator, together with its first warehouse (section 6.1, step 1).
+ */
+public record IncorporateSellerRequestDto(String identifier, String identityDocument, String fullName, String email,
+                                          String taxIdentifier, String corporateName,
+                                          FirstWarehouse firstWarehouse) {
 
-    public IncorporateSellerRequestDto() {}
-
-    public String getAdminIdentifier() { return adminIdentifier; }
-    public void setAdminIdentifier(String adminIdentifier) { this.adminIdentifier = adminIdentifier; }
+    public record FirstWarehouse(String warehouseId, String name, String location) {
+    }
 }

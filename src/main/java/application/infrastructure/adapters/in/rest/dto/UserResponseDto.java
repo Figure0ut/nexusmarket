@@ -8,11 +8,13 @@ import application.domain.models.User;
 
 public class UserResponseDto {
     private String identifier;
+    private String identityDocument;
     private String fullName;
     private String email;
     private UserRole role;
     private UserStatus status;
     private String mainAddress;
+    private java.util.List<String> additionalAddresses;
     private String commercialStatus;
     private String taxIdentifier;
     private String corporateName;
@@ -23,6 +25,7 @@ public class UserResponseDto {
         if (user == null) return null;
         UserResponseDto dto = new UserResponseDto();
         dto.setIdentifier(user.getIdentifier());
+        dto.setIdentityDocument(user.getIdentityDocument());
         dto.setFullName(user.getFullName());
         dto.setEmail(user.getEmail() != null ? user.getEmail().getValue() : null);
         dto.setRole(user.getRole());
@@ -31,6 +34,7 @@ public class UserResponseDto {
         if (user instanceof Buyer buyer) {
             dto.setMainAddress(buyer.getMainAddress() != null ? buyer.getMainAddress().getStreet() : null);
             dto.setCommercialStatus(buyer.getCommercialStatus());
+            dto.setAdditionalAddresses(buyer.getAdditionalAddresses().stream().map(a -> a.getStreet()).toList());
         } else if (user instanceof Seller seller) {
             dto.setTaxIdentifier(seller.getTaxIdentifier() != null ? seller.getTaxIdentifier().getTaxId() : null);
             dto.setCorporateName(seller.getCorporateName());
@@ -41,6 +45,10 @@ public class UserResponseDto {
     public String getIdentifier() { return identifier; }
     public void setIdentifier(String identifier) { this.identifier = identifier; }
 
+    public String getIdentityDocument() { return identityDocument; }
+    public void setIdentityDocument(String identityDocument) { this.identityDocument = identityDocument; }
+    public java.util.List<String> getAdditionalAddresses() { return additionalAddresses; }
+    public void setAdditionalAddresses(java.util.List<String> additionalAddresses) { this.additionalAddresses = additionalAddresses; }
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
 

@@ -1,55 +1,20 @@
-# Comprehensive Domain Model Specification
+# Domain Model Specification
 
-This specification documents the complete Domain Entities & Aggregate Roots located in package `application.domain.models`.
+Entities and aggregates of package `application.domain.models` (100% pure Java, no framework annotations).
+Invariants are validated inside constructors, setters and business methods.
 
----
-
-## Package: `application.domain.models`
-
-### 1. `User`
-- **Fields**: `identifier`, `fullName`, `email` ([`Email`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/valueobjects/Email.java)), `role` ([`UserRole`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/enums/UserRole.java)), `status` ([`UserStatus`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/enums/UserStatus.java)).
-- **Design**: Default constructor, overloaded constructor, getters and setters for all properties with validation.
-
-### 2. `Buyer` (Extends `User`)
-- **Fields**: `mainAddress` ([`Address`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/valueobjects/Address.java)), `additionalAddresses` (`List<Address>`), `commercialStatus`.
-- **Design**: Getters and setters for all properties, convenience methods (`addSecondaryAddress`, `updateMainAddress`, `validateOperation`).
-
-### 3. `Seller` (Extends `User`)
-- **Fields**: `taxIdentifier` ([`TaxIdentifier`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/valueobjects/TaxIdentifier.java)), `corporateName`.
-- **Design**: Getters and setters, `incorporate(User adminUser)` business method validating ADMIN role.
-
-### 4. `Warehouse`
-- **Fields**: `warehouseId`, `name`, `location` ([`Address`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/valueobjects/Address.java)), `type` ([`WarehouseType`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/enums/WarehouseType.java)), `ownerId`, `active`.
-- **Design**: Getters and setters, activation/deactivation business methods.
-
-### 5. `Product`
-- **Fields**: `productId`, `sku` ([`SKU`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/valueobjects/SKU.java)), `sellerId`, `name`, `description`, `price` ([`Money`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/valueobjects/Money.java)), `productType` ([`ProductType`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/enums/ProductType.java)), `status` ([`ProductStatus`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/enums/ProductStatus.java)), `variants` (`List<ProductVariant>`).
-- **Design**: Getters and setters, lifecycle methods (`publish`, `suspend`, `discontinue`).
-
-### 6. `Inventory`
-- **Fields**: `inventoryId`, `productId`, `warehouseId`, `availableStock` ([`StockQuantity`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/valueobjects/StockQuantity.java)), `reservedStock`, `damagedStock`.
-- **Design**: Getters and setters, stock management methods (`reserveStock`, `confirmSale`, `releaseReservation`, `markAsDamaged`).
-
-### 7. `Cart` & `CartItem`
-- **Fields**: `cartId`, `buyerId`, `items` (`List<CartItem>`).
-- **Design**: Getters and setters, `addItem`, `removeItem`, `calculateTotal`.
-
-### 8. `Order` & `OrderItem`
-- **Fields**: `orderId`, `buyerId`, `items` (`List<OrderItem>`), `status` ([`OrderStatus`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/enums/OrderStatus.java)), `shippingAddress`, `totalAmount`.
-- **Design**: Getters and setters, state transition methods (`markAsPaid`, `markAsDispatched`, `finalizeDelivery`, `cancel`).
-
-### 9. `Invoice`
-- **Fields**: `invoiceId`, `orderId`, `buyerId`, `taxIdentifier`, `billingAddress`, `totalAmount`, `status` ([`InvoiceStatus`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/enums/InvoiceStatus.java)).
-- **Design**: Getters and setters, `markAsPaid`, `cancel`.
-
-### 10. `Shipment`
-- **Fields**: `shipmentId`, `orderId`, `warehouseId`, `destinationAddress`, `carrier`, `trackingNumber`, `status` ([`ShipmentStatus`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/enums/ShipmentStatus.java)).
-- **Design**: Getters and setters, `dispatch`, `confirmDelivery`, `markAsFailed`.
-
-### 11. `ReturnRequest` & `Refund`
-- **Fields**: `returnId`, `orderId`, `buyerId`, `productId`, `reason` ([`ReturnReason`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/enums/ReturnReason.java)), `status` ([`ReturnStatus`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/enums/ReturnStatus.java)), `refundId`, `amount`, `refundStatus` ([`RefundStatus`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/enums/RefundStatus.java)).
-- **Design**: Getters and setters, lifecycle approval and processing methods.
-
-### 12. `AuditEntry`
-- **Fields**: `entryId`, `actorId`, `role` ([`UserRole`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/enums/UserRole.java)), `action`, `targetAggregateId`, `timestamp`, `details`.
-- **Design**: Getters and setters, immutable event entry representation for audit logs.
+| Model | Specification source | Key fields | Business methods / invariants |
+| :--- | :--- | :--- | :--- |
+| `User` | Domain 1 | `identifier`, `identityDocument`, `fullName`, `email`, `role`, `status` | All mandatory; full name not empty; `isActive()`. Uniqueness of identifier, identity document and email is enforced by `RegisterUserService`. |
+| `Buyer` (extends `User`) | Domain 2 | `mainAddress` (mandatory), `additionalAddresses` (optional), `commercialStatus` (mandatory) | Role always `BUYER`; `updateMainAddress`, `addSecondaryAddress`, `validateOperation` (never operates on other buyers). |
+| `Seller` (extends `User`) | Domain 3 | `taxIdentifier`, `corporateName` | Role always `SELLER`; `incorporate(admin)`: only an ACTIVE ADMIN, `PENDING_INCORPORATION` → `ACTIVE`. |
+| `Warehouse` | Domain 4 | `warehouseId`, `name`, `location`, `type` (`MARKETPLACE`/`SELLER`), `ownerId`, `active` | Marketplace warehouses are owned by `NEXUSMARKET`; `activate`, `deactivate`, `updateLocation`. |
+| `Product` | Domain 5 | `productId`, `sku`, `sellerId`, `name`, `description`, `price`, `productType`, `status`, `variants` | `publish`, `suspend`, `discontinue` (final), `updatePrice` (> 0), `addVariant`, `isPublished`, `isPhysical`. |
+| `Inventory` | Domain 6 | `productId`, `warehouseId`, `availableStock`, `reservedStock`, `damagedStock`, `lastMovementType` | `addStock` (INFLOW), `reserveStock` (RESERVE), `confirmSale` (OUTFLOW_SALE), `markAsDamaged` (ADJUSTMENT), `registerReturn` (RETURN). Never negative; damaged stock is never reserved. |
+| `Cart` / `CartItem` | Domain 7 (stage CART), OBJ-07 | `cartId`, `buyerId`, `items` | `getStatus()` = `CART`; `addItem` (accumulates quantity), `removeItem`, `clear`, `calculateTotal`. |
+| `Order` / `OrderItem` | Domain 7 | `orderId`, `buyerId`, `items` (product, type, reserving warehouse, unit price, quantity), `status`, `shippingAddress`, `totalAmount` | `markAsPaid` (digital-only orders are finalized immediately), `markAsDispatched`, `finalizeDelivery`; a finalized order can never be modified. |
+| `Invoice` | OBJ-09 | `invoiceId`, `orderId`, `buyerId`, `taxIdentifier`, `billingAddress`, `totalAmount`, `status` | Issued once the payment is validated. |
+| `Shipment` | OBJ-10 | `shipmentId`, `orderId`, `warehouseId`, `destinationAddress`, `carrier`, `trackingNumber`, `status` | `dispatch` (only from PREPARING), `confirmDelivery` (only from IN_TRANSIT). |
+| `ReturnRequest` / `Refund` | OBJ-11 | `returnId`, `orderId`, `buyerId`, `productId`, `reason`, `status`; `refundId`, `amount`, `status` | `approve`, `reject`, `confirmItemReceived`; `process`, `fail`. |
+| `AuditEntry` | Traceability (section 1) | `entryId`, `actorId`, `role`, `action`, `targetAggregateId`, `timestamp`, `details` | Immutable operation record. |
+| `AdministrativeReport` | OBJ-12 | Counters and totals | Read-only consolidated snapshot. |

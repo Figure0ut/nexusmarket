@@ -2,18 +2,18 @@ package application.domain.services;
 
 import application.domain.enums.InvoiceStatus;
 import application.domain.enums.OrderStatus;
+import application.domain.exceptions.DomainException;
 import application.domain.exceptions.EntityNotFoundException;
 import application.domain.exceptions.InvalidDomainStateException;
 import application.domain.models.Invoice;
 import application.domain.models.Order;
 import application.domain.ports.out.InvoiceRepositoryPort;
 import application.domain.ports.out.OrderRepositoryPort;
-import application.domain.valueobjects.Address;
 import application.domain.valueobjects.TaxIdentifier;
 
 /**
- * Atomic domain service responsible exclusively for creating and issuing legal tax invoices
- * for paid orders.
+ * Atomic domain service responsible exclusively for issuing the invoice of an order whose
+ * payment has been validated (OBJ-09: billing of purchases). One invoice per order.
  */
 public class CreateInvoiceService {
 
@@ -31,31 +31,28 @@ public class CreateInvoiceService {
         this.orderRepositoryPort = orderRepositoryPort;
     }
 
-    public Invoice createInvoice(String invoiceId, String orderId, String buyerId, TaxIdentifier taxIdentifier, Address billingAddress) {
-        if (invoiceId == null || invoiceId.trim().isEmpty()) {
-            throw new IllegalArgumentException("Invoice ID cannot be null or empty.");
-        }
+    /**
+     * @param orderId          paid order
+     * @param buyerTaxDocument identity document of the buyer, used as the tax identifier of the invoice
+     */
+    public Invoice createInvoice(String orderId, String buyerTaxDocument) {
         if (orderId == null || orderId.trim().isEmpty()) {
             throw new IllegalArgumentException("Order ID cannot be null or empty.");
         }
-        if (buyerId == null || buyerId.trim().isEmpty()) {
-            throw new IllegalArgumentException("Buyer ID cannot be null or empty.");
-        }
-        if (taxIdentifier == null) {
-            throw new IllegalArgumentException("Tax identifier cannot be null.");
-        }
-        if (billingAddress == null) {
-            throw new IllegalArgumentException("Billing address cannot be null.");
-        }
-
-        Order order = orderRepositoryPort.findOrderById(orderId)
+        Order order = orderRepositoryPort.findOrderById(orderId.trim())
                 .orElseThrow(() -> new EntityNotFoundException("Order not found with ID: " + orderId));
-
-        if (order.getStatus() == OrderStatus.PENDING_PAYMENT || order.getStatus() == OrderStatus.CANCELLED) {
-            throw new InvalidDomainStateException("Cannot generate invoice for order '" + orderId + "' with status: " + order.getStatus());
+        if (order.getStatus() == OrderStatus.PENDING_PAYMENT) {
+            throw new InvalidDomainStateException("Cannot issue an invoice for order '" + orderId + "' before its payment is validated.");
         }
-
-        Invoice invoice = new Invoice(invoiceId, orderId, buyerId, taxIdentifier, billingAddress, order.getTotalAmount(), InvoiceStatus.ISSUED);
+        if (invoiceRepositoryPort.findByOrderId(order.getOrderId()).isPresent()) {
+            throw new DomainException("Order '" + orderId + "' already has an invoice.");
+        }
+        Invoice invoice = new Invoice(buildInvoiceId(order.getOrderId()), order.getOrderId(), order.getBuyerId(),
+                new TaxIdentifier(buyerTaxDocument), order.getShippingAddress(), order.getTotalAmount(), InvoiceStatus.ISSUED);
         return invoiceRepositoryPort.save(invoice);
+    }
+
+    public static String buildInvoiceId(String orderId) {
+        return "INVOICE-" + orderId;
     }
 }

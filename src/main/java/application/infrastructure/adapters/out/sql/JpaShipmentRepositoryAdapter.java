@@ -8,6 +8,7 @@ import application.infrastructure.adapters.out.sql.repository.SpringDataJpaShipm
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -28,6 +29,11 @@ public class JpaShipmentRepositoryAdapter implements ShipmentRepositoryPort {
     @Override
     public Optional<Shipment> findByOrderId(String orderId) {
         return shipmentRepository.findByOrderId(orderId).map(this::toDomain);
+    }
+
+    @Override
+    public List<Shipment> findAll() {
+        return shipmentRepository.findAll().stream().map(this::toDomain).toList();
     }
 
     @Override
@@ -54,7 +60,7 @@ public class JpaShipmentRepositoryAdapter implements ShipmentRepositoryPort {
         entity.setShipmentId(shipment.getShipmentId());
         entity.setOrderId(shipment.getOrderId());
         entity.setWarehouseId(shipment.getWarehouseId());
-        entity.setDestinationAddress(shipment.getDestinationAddress() != null ? shipment.getDestinationAddress().toString() : "");
+        entity.setDestinationAddress(shipment.getDestinationAddress() != null ? shipment.getDestinationAddress().getStreet() : "");
         entity.setCarrier(shipment.getCarrier());
         entity.setTrackingNumber(shipment.getTrackingNumber());
         entity.setStatus(shipment.getStatus());

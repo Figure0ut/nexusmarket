@@ -11,4 +11,5 @@ import java.util.Optional;
 public interface SpringDataJpaInventoryRepository extends JpaRepository<InventoryEntity, String> {
     Optional<InventoryEntity> findByProductIdAndWarehouseId(String productId, String warehouseId);
     List<InventoryEntity> findByProductId(String productId);
+    List<InventoryEntity> findByWarehouseId(String warehouseId);
 }

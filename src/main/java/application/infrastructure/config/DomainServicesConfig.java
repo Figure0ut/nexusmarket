@@ -6,86 +6,107 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Spring configuration class wiring all 53 atomic domain services as pure Java beans,
- * injecting required outbound persistence and gateway port adapters.
+ * Spring configuration that wires the pure-Java domain services as beans.
+ * <p>
+ * The domain layer has no Spring annotations (Hexagonal Architecture): this class is the only place where
+ * domain services are connected with the output adapters (SQL / MongoDB / gateways) that implement the ports.
  */
 @Configuration
 public class DomainServicesConfig {
 
-    // --- Invoicing / Billing ---
+    // --- Users, buyers and authorization ---
 
     @Bean
-    public CreateInvoiceService createInvoiceService(InvoiceRepositoryPort invoiceRepositoryPort, OrderRepositoryPort orderRepositoryPort) {
-        return new CreateInvoiceService(invoiceRepositoryPort, orderRepositoryPort);
+    public ValidateAuthorizationService validateAuthorizationService() {
+        return new ValidateAuthorizationService();
     }
 
     @Bean
-    public GetInvoiceService getInvoiceService(InvoiceRepositoryPort invoiceRepositoryPort) {
-        return new GetInvoiceService(invoiceRepositoryPort);
+    public RegisterUserService registerUserService(UserRepositoryPort userRepositoryPort) {
+        return new RegisterUserService(userRepositoryPort);
     }
 
     @Bean
-    public MarkInvoicePaidService markInvoicePaidService(InvoiceRepositoryPort invoiceRepositoryPort) {
-        return new MarkInvoicePaidService(invoiceRepositoryPort);
+    public AuthenticateUserService authenticateUserService(UserRepositoryPort userRepositoryPort) {
+        return new AuthenticateUserService(userRepositoryPort);
     }
 
     @Bean
-    public CancelInvoiceService cancelInvoiceService(InvoiceRepositoryPort invoiceRepositoryPort) {
-        return new CancelInvoiceService(invoiceRepositoryPort);
-    }
-
-    // --- Cart ---
-
-    @Bean
-    public GetOrCreateCartService getOrCreateCartService(OrderRepositoryPort orderRepositoryPort) {
-        return new GetOrCreateCartService(orderRepositoryPort);
+    public BlockUserService blockUserService(UserRepositoryPort userRepositoryPort) {
+        return new BlockUserService(userRepositoryPort);
     }
 
     @Bean
-    public AddItemToCartService addItemToCartService(OrderRepositoryPort orderRepositoryPort, GetOrCreateCartService getOrCreateCartService) {
-        return new AddItemToCartService(orderRepositoryPort, getOrCreateCartService);
+    public ActivateUserService activateUserService(UserRepositoryPort userRepositoryPort) {
+        return new ActivateUserService(userRepositoryPort);
     }
 
     @Bean
-    public RemoveItemFromCartService removeItemFromCartService(OrderRepositoryPort orderRepositoryPort) {
-        return new RemoveItemFromCartService(orderRepositoryPort);
+    public GetUserService getUserService(UserRepositoryPort userRepositoryPort) {
+        return new GetUserService(userRepositoryPort);
     }
 
     @Bean
-    public ClearCartService clearCartService(OrderRepositoryPort orderRepositoryPort) {
-        return new ClearCartService(orderRepositoryPort);
-    }
-
-    // --- Order / Checkout ---
-
-    @Bean
-    public CheckoutCartService checkoutCartService(OrderRepositoryPort orderRepositoryPort) {
-        return new CheckoutCartService(orderRepositoryPort);
+    public GetAllUsersService getAllUsersService(UserRepositoryPort userRepositoryPort) {
+        return new GetAllUsersService(userRepositoryPort);
     }
 
     @Bean
-    public ProcessOrderPaymentService processOrderPaymentService(OrderRepositoryPort orderRepositoryPort,
-                                                                PaymentGatewayPort paymentGatewayPort,
-                                                                NotificationPort notificationPort) {
-        return new ProcessOrderPaymentService(orderRepositoryPort, paymentGatewayPort, notificationPort);
+    public UpdateBuyerMainAddressService updateBuyerMainAddressService(UserRepositoryPort userRepositoryPort) {
+        return new UpdateBuyerMainAddressService(userRepositoryPort);
     }
 
     @Bean
-    public CancelOrderService cancelOrderService(OrderRepositoryPort orderRepositoryPort) {
-        return new CancelOrderService(orderRepositoryPort);
+    public AddBuyerAdditionalAddressService addBuyerAdditionalAddressService(UserRepositoryPort userRepositoryPort) {
+        return new AddBuyerAdditionalAddressService(userRepositoryPort);
+    }
+
+    // --- Sellers and warehouses ---
+
+    @Bean
+    public RegisterWarehouseService registerWarehouseService(WarehouseRepositoryPort warehouseRepositoryPort,
+                                                             UserRepositoryPort userRepositoryPort) {
+        return new RegisterWarehouseService(warehouseRepositoryPort, userRepositoryPort);
     }
 
     @Bean
-    public GetOrderService getOrderService(OrderRepositoryPort orderRepositoryPort) {
-        return new GetOrderService(orderRepositoryPort);
+    public IncorporateSellerService incorporateSellerService(RegisterUserService registerUserService,
+                                                             RegisterWarehouseService registerWarehouseService,
+                                                             WarehouseRepositoryPort warehouseRepositoryPort) {
+        return new IncorporateSellerService(registerUserService, registerWarehouseService, warehouseRepositoryPort);
     }
 
     @Bean
-    public GetOrdersByBuyerService getOrdersByBuyerService(OrderRepositoryPort orderRepositoryPort) {
-        return new GetOrdersByBuyerService(orderRepositoryPort);
+    public GetWarehouseService getWarehouseService(WarehouseRepositoryPort warehouseRepositoryPort) {
+        return new GetWarehouseService(warehouseRepositoryPort);
     }
 
-    // --- Catalog Management ---
+    @Bean
+    public GetAllWarehousesService getAllWarehousesService(WarehouseRepositoryPort warehouseRepositoryPort) {
+        return new GetAllWarehousesService(warehouseRepositoryPort);
+    }
+
+    @Bean
+    public GetWarehousesByOwnerService getWarehousesByOwnerService(WarehouseRepositoryPort warehouseRepositoryPort) {
+        return new GetWarehousesByOwnerService(warehouseRepositoryPort);
+    }
+
+    @Bean
+    public ActivateWarehouseService activateWarehouseService(WarehouseRepositoryPort warehouseRepositoryPort) {
+        return new ActivateWarehouseService(warehouseRepositoryPort);
+    }
+
+    @Bean
+    public DeactivateWarehouseService deactivateWarehouseService(WarehouseRepositoryPort warehouseRepositoryPort) {
+        return new DeactivateWarehouseService(warehouseRepositoryPort);
+    }
+
+    @Bean
+    public UpdateWarehouseLocationService updateWarehouseLocationService(WarehouseRepositoryPort warehouseRepositoryPort) {
+        return new UpdateWarehouseLocationService(warehouseRepositoryPort);
+    }
+
+    // --- Catalog ---
 
     @Bean
     public RegisterProductService registerProductService(ProductRepositoryPort productRepositoryPort) {
@@ -95,6 +116,16 @@ public class DomainServicesConfig {
     @Bean
     public GetProductService getProductService(ProductRepositoryPort productRepositoryPort) {
         return new GetProductService(productRepositoryPort);
+    }
+
+    @Bean
+    public GetPublishedCatalogService getPublishedCatalogService(ProductRepositoryPort productRepositoryPort) {
+        return new GetPublishedCatalogService(productRepositoryPort);
+    }
+
+    @Bean
+    public GetProductsBySellerService getProductsBySellerService(ProductRepositoryPort productRepositoryPort) {
+        return new GetProductsBySellerService(productRepositoryPort);
     }
 
     @Bean
@@ -122,32 +153,13 @@ public class DomainServicesConfig {
         return new AddProductVariantService(productRepositoryPort);
     }
 
-    // --- Inventory & Stock ---
-
-    @Bean
-    public GetInventoryService getInventoryService(InventoryRepositoryPort inventoryRepositoryPort) {
-        return new GetInventoryService(inventoryRepositoryPort);
-    }
+    // --- Inventory ---
 
     @Bean
     public AddStockService addStockService(InventoryRepositoryPort inventoryRepositoryPort,
-                                           WarehouseRepositoryPort warehouseRepositoryPort) {
-        return new AddStockService(inventoryRepositoryPort, warehouseRepositoryPort);
-    }
-
-    @Bean
-    public ReserveStockService reserveStockService(InventoryRepositoryPort inventoryRepositoryPort) {
-        return new ReserveStockService(inventoryRepositoryPort);
-    }
-
-    @Bean
-    public ReleaseStockReservationService releaseStockReservationService(InventoryRepositoryPort inventoryRepositoryPort) {
-        return new ReleaseStockReservationService(inventoryRepositoryPort);
-    }
-
-    @Bean
-    public ConfirmSaleStockService confirmSaleStockService(InventoryRepositoryPort inventoryRepositoryPort) {
-        return new ConfirmSaleStockService(inventoryRepositoryPort);
+                                           WarehouseRepositoryPort warehouseRepositoryPort,
+                                           ProductRepositoryPort productRepositoryPort) {
+        return new AddStockService(inventoryRepositoryPort, warehouseRepositoryPort, productRepositoryPort);
     }
 
     @Bean
@@ -156,11 +168,93 @@ public class DomainServicesConfig {
     }
 
     @Bean
+    public GetInventoryService getInventoryService(InventoryRepositoryPort inventoryRepositoryPort) {
+        return new GetInventoryService(inventoryRepositoryPort);
+    }
+
+    @Bean
+    public GetInventoriesByProductService getInventoriesByProductService(InventoryRepositoryPort inventoryRepositoryPort) {
+        return new GetInventoriesByProductService(inventoryRepositoryPort);
+    }
+
+    @Bean
     public GetTotalAvailableStockService getTotalAvailableStockService(InventoryRepositoryPort inventoryRepositoryPort) {
         return new GetTotalAvailableStockService(inventoryRepositoryPort);
     }
 
-    // --- Logistics & Dispatch ---
+    // --- Cart ---
+
+    @Bean
+    public GetOrCreateCartService getOrCreateCartService(OrderRepositoryPort orderRepositoryPort) {
+        return new GetOrCreateCartService(orderRepositoryPort);
+    }
+
+    @Bean
+    public AddItemToCartService addItemToCartService(OrderRepositoryPort orderRepositoryPort,
+                                                     GetOrCreateCartService getOrCreateCartService,
+                                                     ProductRepositoryPort productRepositoryPort) {
+        return new AddItemToCartService(orderRepositoryPort, getOrCreateCartService, productRepositoryPort);
+    }
+
+    @Bean
+    public RemoveItemFromCartService removeItemFromCartService(OrderRepositoryPort orderRepositoryPort) {
+        return new RemoveItemFromCartService(orderRepositoryPort);
+    }
+
+    @Bean
+    public ClearCartService clearCartService(OrderRepositoryPort orderRepositoryPort) {
+        return new ClearCartService(orderRepositoryPort);
+    }
+
+    // --- Orders, payment and billing ---
+
+    @Bean
+    public CheckoutCartService checkoutCartService(OrderRepositoryPort orderRepositoryPort,
+                                                   ProductRepositoryPort productRepositoryPort,
+                                                   InventoryRepositoryPort inventoryRepositoryPort,
+                                                   WarehouseRepositoryPort warehouseRepositoryPort) {
+        return new CheckoutCartService(orderRepositoryPort, productRepositoryPort, inventoryRepositoryPort, warehouseRepositoryPort);
+    }
+
+    @Bean
+    public CreateInvoiceService createInvoiceService(InvoiceRepositoryPort invoiceRepositoryPort, OrderRepositoryPort orderRepositoryPort) {
+        return new CreateInvoiceService(invoiceRepositoryPort, orderRepositoryPort);
+    }
+
+    @Bean
+    public ProcessOrderPaymentService processOrderPaymentService(OrderRepositoryPort orderRepositoryPort,
+                                                                 PaymentGatewayPort paymentGatewayPort,
+                                                                 NotificationPort notificationPort,
+                                                                 CreateInvoiceService createInvoiceService) {
+        return new ProcessOrderPaymentService(orderRepositoryPort, paymentGatewayPort, notificationPort, createInvoiceService);
+    }
+
+    @Bean
+    public GetOrderService getOrderService(OrderRepositoryPort orderRepositoryPort) {
+        return new GetOrderService(orderRepositoryPort);
+    }
+
+    @Bean
+    public GetOrdersByBuyerService getOrdersByBuyerService(OrderRepositoryPort orderRepositoryPort) {
+        return new GetOrdersByBuyerService(orderRepositoryPort);
+    }
+
+    @Bean
+    public GetAllOrdersService getAllOrdersService(OrderRepositoryPort orderRepositoryPort) {
+        return new GetAllOrdersService(orderRepositoryPort);
+    }
+
+    @Bean
+    public GetInvoiceService getInvoiceService(InvoiceRepositoryPort invoiceRepositoryPort) {
+        return new GetInvoiceService(invoiceRepositoryPort);
+    }
+
+    @Bean
+    public GetInvoiceByOrderService getInvoiceByOrderService(InvoiceRepositoryPort invoiceRepositoryPort) {
+        return new GetInvoiceByOrderService(invoiceRepositoryPort);
+    }
+
+    // --- Logistics ---
 
     @Bean
     public PrepareShipmentService prepareShipmentService(ShipmentRepositoryPort shipmentRepositoryPort,
@@ -170,14 +264,10 @@ public class DomainServicesConfig {
     }
 
     @Bean
-    public GetShipmentService getShipmentService(ShipmentRepositoryPort shipmentRepositoryPort) {
-        return new GetShipmentService(shipmentRepositoryPort);
-    }
-
-    @Bean
     public DispatchShipmentService dispatchShipmentService(ShipmentRepositoryPort shipmentRepositoryPort,
-                                                           OrderRepositoryPort orderRepositoryPort) {
-        return new DispatchShipmentService(shipmentRepositoryPort, orderRepositoryPort);
+                                                           OrderRepositoryPort orderRepositoryPort,
+                                                           InventoryRepositoryPort inventoryRepositoryPort) {
+        return new DispatchShipmentService(shipmentRepositoryPort, orderRepositoryPort, inventoryRepositoryPort);
     }
 
     @Bean
@@ -187,15 +277,14 @@ public class DomainServicesConfig {
     }
 
     @Bean
-    public ReportFailedDeliveryService reportFailedDeliveryService(ShipmentRepositoryPort shipmentRepositoryPort) {
-        return new ReportFailedDeliveryService(shipmentRepositoryPort);
+    public GetShipmentService getShipmentService(ShipmentRepositoryPort shipmentRepositoryPort) {
+        return new GetShipmentService(shipmentRepositoryPort);
     }
 
-    // --- Return & Refund ---
+    // --- Returns and refunds ---
 
     @Bean
-    public RequestReturnService requestReturnService(ReturnRepositoryPort returnRepositoryPort,
-                                                     OrderRepositoryPort orderRepositoryPort) {
+    public RequestReturnService requestReturnService(ReturnRepositoryPort returnRepositoryPort, OrderRepositoryPort orderRepositoryPort) {
         return new RequestReturnService(returnRepositoryPort, orderRepositoryPort);
     }
 
@@ -217,77 +306,12 @@ public class DomainServicesConfig {
     @Bean
     public ProcessReturnAndRefundService processReturnAndRefundService(ReturnRepositoryPort returnRepositoryPort,
                                                                        InventoryRepositoryPort inventoryRepositoryPort,
-                                                                       PaymentGatewayPort paymentGatewayPort) {
-        return new ProcessReturnAndRefundService(returnRepositoryPort, inventoryRepositoryPort, paymentGatewayPort);
+                                                                       PaymentGatewayPort paymentGatewayPort,
+                                                                       OrderRepositoryPort orderRepositoryPort) {
+        return new ProcessReturnAndRefundService(returnRepositoryPort, inventoryRepositoryPort, paymentGatewayPort, orderRepositoryPort);
     }
 
-    // --- Seller Incorporation ---
-
-    @Bean
-    public IncorporateSellerService incorporateSellerService(UserRepositoryPort userRepositoryPort) {
-        return new IncorporateSellerService(userRepositoryPort);
-    }
-
-    // --- User & Authentication ---
-
-    @Bean
-    public AuthenticateUserService authenticateUserService(UserRepositoryPort userRepositoryPort) {
-        return new AuthenticateUserService(userRepositoryPort);
-    }
-
-    @Bean
-    public RegisterUserService registerUserService(UserRepositoryPort userRepositoryPort) {
-        return new RegisterUserService(userRepositoryPort);
-    }
-
-    @Bean
-    public BlockUserService blockUserService(UserRepositoryPort userRepositoryPort) {
-        return new BlockUserService(userRepositoryPort);
-    }
-
-    @Bean
-    public ActivateUserService activateUserService(UserRepositoryPort userRepositoryPort) {
-        return new ActivateUserService(userRepositoryPort);
-    }
-
-    @Bean
-    public GetUserService getUserService(UserRepositoryPort userRepositoryPort) {
-        return new GetUserService(userRepositoryPort);
-    }
-
-    // --- Warehouse Management ---
-
-    @Bean
-    public RegisterWarehouseService registerWarehouseService(WarehouseRepositoryPort warehouseRepositoryPort) {
-        return new RegisterWarehouseService(warehouseRepositoryPort);
-    }
-
-    @Bean
-    public GetWarehouseService getWarehouseService(WarehouseRepositoryPort warehouseRepositoryPort) {
-        return new GetWarehouseService(warehouseRepositoryPort);
-    }
-
-    @Bean
-    public ActivateWarehouseService activateWarehouseService(WarehouseRepositoryPort warehouseRepositoryPort) {
-        return new ActivateWarehouseService(warehouseRepositoryPort);
-    }
-
-    @Bean
-    public DeactivateWarehouseService deactivateWarehouseService(WarehouseRepositoryPort warehouseRepositoryPort) {
-        return new DeactivateWarehouseService(warehouseRepositoryPort);
-    }
-
-    @Bean
-    public UpdateWarehouseLocationService updateWarehouseLocationService(WarehouseRepositoryPort warehouseRepositoryPort) {
-        return new UpdateWarehouseLocationService(warehouseRepositoryPort);
-    }
-
-    @Bean
-    public GetWarehousesByOwnerService getWarehousesByOwnerService(WarehouseRepositoryPort warehouseRepositoryPort) {
-        return new GetWarehousesByOwnerService(warehouseRepositoryPort);
-    }
-
-    // --- Operation Audit ---
+    // --- Audit and administrative reports ---
 
     @Bean
     public LogOperationService logOperationService(AuditLogRepositoryPort auditLogRepositoryPort) {
@@ -304,10 +328,16 @@ public class DomainServicesConfig {
         return new GetAuditLogsByAggregateService(auditLogRepositoryPort);
     }
 
-    // --- Authorization ---
-
     @Bean
-    public ValidateAuthorizationService validateAuthorizationService() {
-        return new ValidateAuthorizationService();
+    public GenerateAdministrativeReportService generateAdministrativeReportService(UserRepositoryPort userRepositoryPort,
+                                                                                   WarehouseRepositoryPort warehouseRepositoryPort,
+                                                                                   ProductRepositoryPort productRepositoryPort,
+                                                                                   InventoryRepositoryPort inventoryRepositoryPort,
+                                                                                   OrderRepositoryPort orderRepositoryPort,
+                                                                                   InvoiceRepositoryPort invoiceRepositoryPort,
+                                                                                   ShipmentRepositoryPort shipmentRepositoryPort,
+                                                                                   ReturnRepositoryPort returnRepositoryPort) {
+        return new GenerateAdministrativeReportService(userRepositoryPort, warehouseRepositoryPort, productRepositoryPort,
+                inventoryRepositoryPort, orderRepositoryPort, invoiceRepositoryPort, shipmentRepositoryPort, returnRepositoryPort);
     }
 }

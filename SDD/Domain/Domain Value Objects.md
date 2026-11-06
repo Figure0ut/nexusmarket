@@ -24,11 +24,11 @@ All non-enum Value Objects feature default and overloaded constructors, getters,
 - **`UserStatus`**: `ACTIVE`, `BLOCKED`, `PENDING_INCORPORATION`.
 - **`WarehouseType`**: `MARKETPLACE`, `SELLER`.
 - **`ProductType`**: `PHYSICAL`, `DIGITAL`.
-- **`ProductStatus`**: `DRAFT`, `PUBLISHED`, `SUSPENDED`, `DISCONTINUED`.
+- **`ProductStatus`**: `PUBLISHED`, `SUSPENDED`, `DISCONTINUED` (exactly the three values of Domain 5).
 - **`InventoryMovementType`**: `INFLOW`, `RESERVE`, `OUTFLOW_SALE`, `ADJUSTMENT`, `RETURN`. Tracked via `Inventory.lastMovementType`.
-- **`OrderStatus`**: `PENDING_PAYMENT`, `PAID`, `DISPATCHED`, `DELIVERED_FINALIZED`, `CANCELLED`. Note: Cart state is managed by the separate `Cart` aggregate.
-- **`InvoiceStatus`**: `ISSUED`, `PAID`, `CANCELLED`.
-- **`ShipmentStatus`**: `PREPARING`, `IN_TRANSIT`, `DELIVERED`, `FAILED`.
+- **`OrderStatus`**: `CART`, `PENDING_PAYMENT`, `PAID`, `DISPATCHED`, `DELIVERED_FINALIZED` (exactly the lifecycle of Domain 7). The CART stage is represented by the `Cart` aggregate.
+- **`InvoiceStatus`**: `ISSUED` (the specification defines no invoice lifecycle).
+- **`ShipmentStatus`**: `PREPARING` (packing), `IN_TRANSIT` (dispatch and transport), `DELIVERED`.
 - **`ReturnReason`**: `DAMAGED`, `WRONG_ITEM`, `DEFECTIVE`, `CUSTOMER_REGRET`.
 - **`ReturnStatus`**: `REQUESTED`, `APPROVED`, `REJECTED`, `ITEM_RECEIVED`.
 - **`RefundStatus`**: `PENDING`, `PROCESSED`, `FAILED`.

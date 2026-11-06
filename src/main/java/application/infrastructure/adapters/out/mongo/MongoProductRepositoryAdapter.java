@@ -47,6 +47,11 @@ public class MongoProductRepositoryAdapter implements ProductRepositoryPort {
     }
 
     @Override
+    public List<Product> findAll() {
+        return mongoRepository.findAll().stream().map(this::toDomain).toList();
+    }
+
+    @Override
     public Product save(Product product) {
         ProductDocument doc = toDocument(product);
         ProductDocument saved = mongoRepository.save(doc);

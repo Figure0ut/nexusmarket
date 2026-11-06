@@ -9,6 +9,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Buyer (Domain 2 - Buyer Management).
+ * <p>
+ * Specific attributes: main address (mandatory), additional addresses (optional)
+ * and commercial status (mandatory). A buyer never manages information of other buyers
+ * nor inventories.
+ */
 public class Buyer extends User {
 
     private Address mainAddress;
@@ -21,17 +28,26 @@ public class Buyer extends User {
         setStatus(UserStatus.ACTIVE);
     }
 
-    public Buyer(String identifier, String fullName, Email email, UserRole role, UserStatus status,
+    public Buyer(String identifier, String identityDocument, String fullName, Email email, UserStatus status,
                  Address mainAddress, List<Address> additionalAddresses, String commercialStatus) {
-        super(identifier, fullName, email, role, status);
+        super(identifier, identityDocument, fullName, email, UserRole.BUYER, status);
         setMainAddress(mainAddress);
         setAdditionalAddresses(additionalAddresses);
         setCommercialStatus(commercialStatus);
     }
 
-    public Buyer(String identifier, String fullName, String emailStr, String mainAddressStr, String commercialStatus) {
-        this(identifier, fullName, new Email(emailStr), UserRole.BUYER, UserStatus.ACTIVE,
+    public Buyer(String identifier, String identityDocument, String fullName, String emailStr,
+                 String mainAddressStr, String commercialStatus) {
+        this(identifier, identityDocument, fullName, new Email(emailStr), UserStatus.ACTIVE,
                 new Address(mainAddressStr), new ArrayList<>(), commercialStatus);
+    }
+
+    @Override
+    public void setRole(UserRole role) {
+        if (role != UserRole.BUYER) {
+            throw new IllegalArgumentException("A Buyer must always have the BUYER role (RG-02).");
+        }
+        super.setRole(role);
     }
 
     public Address getMainAddress() {
@@ -88,13 +104,12 @@ public class Buyer extends User {
     }
 
     /**
-     * Validates that this Buyer is authorized to perform an operation on the target user.
-     * A Buyer can only perform self-service operations on their own account —
-     * they cannot perform administrative operations on other users.
+     * Validates that this Buyer only operates on its own account.
+     * A Buyer can never manage the information of other buyers (Domain 2).
      *
      * @param target the user being operated on
      * @throws IllegalArgumentException if target is null
-     * @throws IllegalStateException if the Buyer is not authorized for this operation
+     * @throws IllegalStateException if the target is a different user
      */
     public void validateOperation(User target) {
         if (target == null) {
@@ -102,7 +117,7 @@ public class Buyer extends User {
         }
         if (!target.getIdentifier().equals(this.getIdentifier())) {
             throw new IllegalStateException("Authorization Failure: Buyer '" + getIdentifier() +
-                    "' is not authorized to perform administrative operations on target user '" + target.getIdentifier() + "'.");
+                    "' is not authorized to operate on user '" + target.getIdentifier() + "'.");
         }
     }
 }

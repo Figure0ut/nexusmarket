@@ -9,6 +9,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Order aggregate (Domain 7). Represents the formal commercial commitment of a buyer.
+ * Lifecycle: CART (Cart aggregate) -> PENDING_PAYMENT -> PAID -> DISPATCHED -> DELIVERED_FINALIZED.
+ */
 public class Order {
 
     private String orderId;
@@ -21,6 +25,7 @@ public class Order {
     public Order() {
         this.status = OrderStatus.PENDING_PAYMENT;
     }
+
 
     public Order(String orderId, String buyerId, List<OrderItem> items, OrderStatus status, Address shippingAddress) {
         setOrderId(orderId);
@@ -81,6 +86,9 @@ public class Order {
         if (status == null) {
             throw new IllegalArgumentException("Order status cannot be null.");
         }
+        if (status == OrderStatus.CART) {
+            throw new IllegalArgumentException("An order is created at checkout; the CART stage is represented by the Cart aggregate.");
+        }
         this.status = status;
     }
 
@@ -99,32 +107,71 @@ public class Order {
         return totalAmount;
     }
 
+    /**
+     * Payment validated (PENDING_PAYMENT -> PAID).
+     * Digital products are delivered immediately after payment (Domain 5), therefore an order
+     * that only contains digital items is finalized right away.
+     */
     public void markAsPaid() {
+        ensureNotFinalized();
         if (status != OrderStatus.PENDING_PAYMENT) {
             throw new IllegalStateException("Order '" + orderId + "' cannot transition to PAID from status '" + status + "'.");
         }
         setStatus(OrderStatus.PAID);
+        if (!containsPhysicalItems()) {
+            setStatus(OrderStatus.DELIVERED_FINALIZED);
+        }
     }
 
+    /**
+     * Physical exit from the warehouse (PAID -> DISPATCHED).
+     */
     public void markAsDispatched() {
+        ensureNotFinalized();
         if (status != OrderStatus.PAID) {
             throw new IllegalStateException("Order '" + orderId + "' cannot transition to DISPATCHED from status '" + status + "'.");
+        }
+        if (!containsPhysicalItems()) {
+            throw new IllegalStateException("Order '" + orderId + "' only contains digital products and does not require dispatch.");
         }
         setStatus(OrderStatus.DISPATCHED);
     }
 
+    /**
+     * Delivery confirmed (DISPATCHED -> DELIVERED_FINALIZED).
+     */
     public void finalizeDelivery() {
+        ensureNotFinalized();
         if (status != OrderStatus.DISPATCHED) {
             throw new IllegalStateException("Order '" + orderId + "' cannot transition to DELIVERED_FINALIZED from status '" + status + "'.");
         }
         setStatus(OrderStatus.DELIVERED_FINALIZED);
     }
 
-    public void cancel() {
-        if (status == OrderStatus.DELIVERED_FINALIZED) {
-            throw new IllegalStateException("Finalized Order Failure: Order '" + orderId + "' is finalized/delivered and cannot be cancelled.");
+    public boolean isFinalized() {
+        return status == OrderStatus.DELIVERED_FINALIZED;
+    }
+
+    public boolean containsPhysicalItems() {
+        return items.stream().anyMatch(OrderItem::isPhysical);
+    }
+
+    public boolean containsProduct(String productId) {
+        return items.stream().anyMatch(item -> item.getProductId().equals(productId));
+    }
+
+    public java.util.Optional<OrderItem> findItem(String productId) {
+        return items.stream().filter(item -> item.getProductId().equals(productId)).findFirst();
+    }
+
+    /**
+     * A finalized order can never be modified under any circumstance (section 11).
+     */
+    private void ensureNotFinalized() {
+        if (isFinalized()) {
+            throw new IllegalStateException("Finalized Order Failure: Order '" + orderId +
+                    "' is DELIVERED_FINALIZED and cannot be modified under any circumstance.");
         }
-        setStatus(OrderStatus.CANCELLED);
     }
 
     @Override

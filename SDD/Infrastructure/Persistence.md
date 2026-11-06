@@ -90,3 +90,17 @@ To allow the application to compile, execute, and be evaluated on any workstatio
    - Configured with `jdbc:h2:mem:nexusmarket;DB_CLOSE_DELAY=-1`.
    - Schema generation handled automatically via Hibernate DDL auto-generation.
    - H2 Console available at `/h2-console` for inspection.
+
+---
+
+## 4. Test Doubles
+
+The in-memory repository adapters live in `src/test/java/application/infrastructure/adapters/out/memory` and are only used by the
+domain unit tests. At runtime every repository port has exactly one implementation (SQL or MongoDB).
+The payment gateway and the e-mail notification are simulated adapters (`InMemoryPaymentGatewayAdapter`, `InMemoryNotificationAdapter`)
+because the specification does not define real external providers.
+
+## 5. Notes
+- Users keep `identity_document` and `email` as unique columns; buyer additional addresses are stored in `buyer_additional_addresses`.
+- Order lines store `product_type` and the `warehouse_id` where their stock was reserved.
+- Both databases are in-memory: data is lost when the application stops.

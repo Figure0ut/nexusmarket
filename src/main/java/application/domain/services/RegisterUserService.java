@@ -5,7 +5,8 @@ import application.domain.models.User;
 import application.domain.ports.out.UserRepositoryPort;
 
 /**
- * Atomic domain service responsible exclusively for registering a new user with uniqueness validation.
+ * Atomic domain service responsible exclusively for registering a new user,
+ * enforcing the uniqueness of identifier, identity document and email (Domain 1 and section 11).
  */
 public class RegisterUserService {
 
@@ -25,10 +26,12 @@ public class RegisterUserService {
         if (userRepositoryPort.findById(user.getIdentifier()).isPresent()) {
             throw new DomainException("User with identifier '" + user.getIdentifier() + "' already exists.");
         }
+        if (userRepositoryPort.existsByIdentityDocument(user.getIdentityDocument())) {
+            throw new DomainException("User with identity document '" + user.getIdentityDocument() + "' already exists.");
+        }
         if (userRepositoryPort.existsByEmail(user.getEmail())) {
             throw new DomainException("User with email '" + user.getEmail().getValue() + "' already exists.");
         }
-
         return userRepositoryPort.save(user);
     }
 }

@@ -2,66 +2,52 @@ package application.domain.services;
 
 import application.domain.enums.UserRole;
 import application.domain.enums.UserStatus;
+import application.domain.enums.WarehouseType;
+import application.domain.exceptions.InvalidDomainStateException;
 import application.domain.models.Seller;
 import application.domain.models.User;
-import application.domain.ports.out.UserRepositoryPort;
+import application.domain.models.Warehouse;
+import application.domain.valueobjects.Address;
 import application.domain.valueobjects.Email;
-import application.domain.valueobjects.TaxIdentifier;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class SellerIncorporationServiceTest {
 
-    private IncorporateSellerService incorporationService;
-    private MockUserRepository userRepository;
+    private final MarketplaceFixture f = new MarketplaceFixture();
 
-    @BeforeEach
-    void setUp() {
-        userRepository = new MockUserRepository();
-        incorporationService = new IncorporateSellerService(userRepository);
+    private Seller newSeller() {
+        return new Seller("SEL-9", "NIT-9", "Seller Nine", new Email("nine@nexusmarket.com"), UserStatus.PENDING_INCORPORATION, null, null);
+    }
+
+    private Warehouse firstWarehouse() {
+        return new Warehouse("WH-9", "Nine Warehouse", new Address("Street 9"), WarehouseType.SELLER, "SEL-9", true);
     }
 
     @Test
-    @DisplayName("Should successfully incorporate seller when authorized by ADMIN via atomic service")
-    void shouldIncorporateSellerByAdmin() {
-        Seller seller = new Seller("SEL-1", "Seller Co", new Email("seller@nexusmarket.com"), UserRole.SELLER, UserStatus.PENDING_INCORPORATION, new TaxIdentifier("TAX-999"), "Seller Corp");
-        userRepository.save(seller);
-
-        User admin = new User("ADM-1", "Admin User", new Email("admin@nexusmarket.com"), UserRole.ADMIN, UserStatus.ACTIVE);
-
-        incorporationService.incorporateSeller("SEL-1", admin);
-
-        assertEquals(UserStatus.ACTIVE, userRepository.findById("SEL-1").get().getStatus());
+    @DisplayName("The administrator registers the seller together with its first warehouse")
+    void adminIncorporatesSellerWithFirstWarehouse() {
+        Seller seller = f.incorporateSeller.incorporateSeller(newSeller(), firstWarehouse(), f.admin);
+        assertEquals(UserStatus.ACTIVE, seller.getStatus());
+        assertEquals("Seller Nine", seller.getCorporateName());
+        assertTrue(f.warehouses.findById("WH-9").isPresent());
+        assertEquals("SEL-9", f.warehouses.findById("WH-9").get().getOwnerId());
     }
 
     @Test
-    @DisplayName("Should reject incorporation when performed by non-admin user")
-    void shouldRejectNonAdminIncorporation() {
-        Seller seller = new Seller("SEL-1", "Seller Co", new Email("seller@nexusmarket.com"), UserRole.SELLER, UserStatus.PENDING_INCORPORATION, new TaxIdentifier("TAX-999"), "Seller Corp");
-        userRepository.save(seller);
-
-        User buyer = new User("BUY-1", "Buyer User", new Email("buyer@nexusmarket.com"), UserRole.BUYER, UserStatus.ACTIVE);
-
-        assertThrows(IllegalStateException.class, () ->
-                incorporationService.incorporateSeller("SEL-1", buyer)
-        );
+    @DisplayName("A non-administrator cannot incorporate sellers and nothing is persisted")
+    void nonAdminCannotIncorporate() {
+        User operator = new User("OP-1", "CC-OP", "Operator", "op@nexusmarket.com", UserRole.OPERATOR_LOGISTIC, UserStatus.ACTIVE);
+        assertThrows(InvalidDomainStateException.class, () -> f.incorporateSeller.incorporateSeller(newSeller(), firstWarehouse(), operator));
+        assertTrue(f.users.findById("SEL-9").isEmpty());
     }
 
-    private static class MockUserRepository implements UserRepositoryPort {
-        private final Map<String, User> storage = new HashMap<>();
-
-        @Override public Optional<User> findById(String identifier) { return Optional.ofNullable(storage.get(identifier)); }
-        @Override public Optional<User> findByEmail(Email email) {
-            return storage.values().stream().filter(u -> u.getEmail().equals(email)).findFirst();
-        }
-        @Override public User save(User user) { storage.put(user.getIdentifier(), user); return user; }
-        @Override public boolean existsByEmail(Email email) { return false; }
+    @Test
+    @DisplayName("The first warehouse must be a SELLER warehouse owned by the new seller")
+    void firstWarehouseMustBelongToSeller() {
+        Warehouse marketplace = new Warehouse("WH-M", "Main", new Address("Street"), WarehouseType.MARKETPLACE, null, true);
+        assertThrows(InvalidDomainStateException.class, () -> f.incorporateSeller.incorporateSeller(newSeller(), marketplace, f.admin));
     }
 }

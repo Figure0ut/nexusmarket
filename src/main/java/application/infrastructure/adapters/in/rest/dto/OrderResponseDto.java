@@ -31,6 +31,8 @@ public class OrderResponseDto {
                 dto.getItems().add(new OrderItemResponseDto(
                         item.getProductId(),
                         item.getProductName(),
+                        item.getProductType(),
+                        item.getWarehouseId(),
                         item.getUnitPrice() != null ? item.getUnitPrice().getAmount().doubleValue() : 0.0,
                         item.getQuantity(),
                         item.calculateSubtotal() != null ? item.calculateSubtotal().getAmount().doubleValue() : 0.0

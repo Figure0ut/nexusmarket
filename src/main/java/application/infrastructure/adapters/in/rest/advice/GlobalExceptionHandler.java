@@ -3,7 +3,11 @@ package application.infrastructure.adapters.in.rest.advice;
 import application.domain.exceptions.DomainException;
 import application.domain.exceptions.EntityNotFoundException;
 import application.domain.exceptions.InvalidDomainStateException;
+import application.domain.exceptions.AuthorizationException;
+import application.infrastructure.adapters.in.rest.security.AuthenticationRequiredException;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -14,6 +18,31 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(AuthenticationRequiredException.class)
+    public ResponseEntity<ErrorResponseDto> handleUnauthenticated(AuthenticationRequiredException ex, HttpServletRequest request) {
+        return build(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(AuthorizationException.class)
+    public ResponseEntity<ErrorResponseDto> handleForbidden(AuthorizationException ex, HttpServletRequest request) {
+        return build(HttpStatus.FORBIDDEN, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(MissingRequestHeaderException.class)
+    public ResponseEntity<ErrorResponseDto> handleMissingHeader(MissingRequestHeaderException ex, HttpServletRequest request) {
+        return build(HttpStatus.UNAUTHORIZED, "RG-01: every operation must be executed by an authenticated user. Missing header '"
+                + ex.getHeaderName() + "'.", request);
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponseDto> handleUnreadableBody(HttpMessageNotReadableException ex, HttpServletRequest request) {
+        return build(HttpStatus.BAD_REQUEST, "Malformed JSON request body: " + ex.getMostSpecificCause().getMessage(), request);
+    }
+
+    private ResponseEntity<ErrorResponseDto> build(HttpStatus status, String message, HttpServletRequest request) {
+        return ResponseEntity.status(status).body(new ErrorResponseDto(status.value(), status.getReasonPhrase(), message, request.getRequestURI()));
+    }
 
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<ErrorResponseDto> handleNotFound(EntityNotFoundException ex, HttpServletRequest request) {

@@ -7,6 +7,9 @@ import application.domain.valueobjects.TaxIdentifier;
 
 import java.util.Objects;
 
+/**
+ * Invoice (OBJ-09): commercial information associated with a sale, issued when the payment of an order is validated.
+ */
 public class Invoice {
 
     private String invoiceId;
@@ -111,14 +114,6 @@ public class Invoice {
             throw new IllegalArgumentException("Invoice status cannot be null.");
         }
         this.status = status;
-    }
-
-    public void markAsPaid() {
-        setStatus(InvoiceStatus.PAID);
-    }
-
-    public void cancel() {
-        setStatus(InvoiceStatus.CANCELLED);
     }
 
     @Override

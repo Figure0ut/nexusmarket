@@ -7,7 +7,8 @@ import application.domain.ports.out.OrderRepositoryPort;
 import application.domain.ports.out.ShipmentRepositoryPort;
 
 /**
- * Atomic domain service responsible exclusively for confirming successful delivery of a shipment.
+ * Atomic domain service responsible exclusively for confirming the delivery of a shipment
+ * (section 6.1, step 8: the order is marked as DELIVERED_FINALIZED after the delivery is confirmed).
  */
 public class ConfirmDeliveryService {
 
@@ -26,7 +27,7 @@ public class ConfirmDeliveryService {
         this.orderRepositoryPort = orderRepositoryPort;
     }
 
-    public void confirmDelivery(String shipmentId) {
+    public Shipment confirmDelivery(String shipmentId) {
         if (shipmentId == null || shipmentId.trim().isEmpty()) {
             throw new IllegalArgumentException("Shipment ID cannot be null or empty.");
         }
@@ -40,7 +41,7 @@ public class ConfirmDeliveryService {
 
         order.finalizeDelivery();
 
-        shipmentRepositoryPort.save(shipment);
         orderRepositoryPort.saveOrder(order);
+        return shipmentRepositoryPort.save(shipment);
     }
 }

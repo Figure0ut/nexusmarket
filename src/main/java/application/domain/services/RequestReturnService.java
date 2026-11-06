@@ -1,16 +1,19 @@
 package application.domain.services;
 
 import application.domain.enums.OrderStatus;
-import application.domain.enums.ReturnReason;
+import application.domain.exceptions.DomainException;
 import application.domain.exceptions.EntityNotFoundException;
 import application.domain.exceptions.InvalidDomainStateException;
 import application.domain.models.Order;
 import application.domain.models.ReturnRequest;
+import application.domain.enums.ReturnReason;
 import application.domain.ports.out.OrderRepositoryPort;
 import application.domain.ports.out.ReturnRepositoryPort;
 
 /**
- * Atomic domain service responsible exclusively for requesting a return on a delivered order.
+ * Atomic domain service responsible exclusively for requesting the return of a product of a delivered order
+ * (OBJ-11). The order itself is NOT modified: a finalized order can never be modified (section 11);
+ * the return is managed as an independent aggregate.
  */
 public class RequestReturnService {
 
@@ -44,15 +47,27 @@ public class RequestReturnService {
         if (reason == null) {
             throw new IllegalArgumentException("Return reason cannot be null.");
         }
-
-        Order order = orderRepositoryPort.findOrderById(orderId)
+        if (returnRepositoryPort.findReturnById(returnId.trim()).isPresent()) {
+            throw new DomainException("Return request with ID '" + returnId + "' already exists.");
+        }
+        Order order = orderRepositoryPort.findOrderById(orderId.trim())
                 .orElseThrow(() -> new EntityNotFoundException("Order not found with ID: " + orderId));
-
+        if (!order.getBuyerId().equals(buyerId.trim())) {
+            throw new InvalidDomainStateException("Order '" + orderId + "' does not belong to buyer '" + buyerId + "'.");
+        }
         if (order.getStatus() != OrderStatus.DELIVERED_FINALIZED) {
             throw new InvalidDomainStateException("Cannot request return for order '" + orderId + "' with status: " + order.getStatus() + ". Order must be DELIVERED_FINALIZED.");
         }
-
-        ReturnRequest returnRequest = new ReturnRequest(returnId, orderId, buyerId, productId, reason);
+        if (!order.containsProduct(productId.trim())) {
+            throw new InvalidDomainStateException("Product '" + productId + "' is not part of order '" + orderId + "'.");
+        }
+        boolean alreadyRequested = returnRepositoryPort.findAllReturns().stream()
+                .anyMatch(r -> r.getOrderId().equals(order.getOrderId()) && r.getProductId().equals(productId.trim())
+                        && r.getStatus() != application.domain.enums.ReturnStatus.REJECTED);
+        if (alreadyRequested) {
+            throw new DomainException("A return for product '" + productId + "' of order '" + orderId + "' already exists.");
+        }
+        ReturnRequest returnRequest = new ReturnRequest(returnId.trim(), order.getOrderId(), order.getBuyerId(), productId.trim(), reason);
         return returnRepositoryPort.saveReturn(returnRequest);
     }
 }

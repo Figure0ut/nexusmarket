@@ -5,7 +5,13 @@ import application.domain.valueobjects.Address;
 
 import java.util.Objects;
 
+/**
+ * Physical storage space (Domain 4). The specification distinguishes Marketplace warehouses
+ * and Seller warehouses. Marketplace warehouses are owned by the marketplace itself.
+ */
 public class Warehouse {
+
+    public static final String MARKETPLACE_OWNER_ID = "NEXUSMARKET";
 
     private String warehouseId;
     private String name;
@@ -72,6 +78,9 @@ public class Warehouse {
             throw new IllegalArgumentException("Warehouse type cannot be null.");
         }
         this.type = type;
+        if (type == WarehouseType.MARKETPLACE) {
+            this.ownerId = MARKETPLACE_OWNER_ID;
+        }
     }
 
     public String getOwnerId() {
@@ -79,6 +88,10 @@ public class Warehouse {
     }
 
     public void setOwnerId(String ownerId) {
+        if (type == WarehouseType.MARKETPLACE) {
+            this.ownerId = MARKETPLACE_OWNER_ID;
+            return;
+        }
         if (ownerId == null || ownerId.trim().isEmpty()) {
             throw new IllegalArgumentException("Warehouse owner Id cannot be null or empty.");
         }

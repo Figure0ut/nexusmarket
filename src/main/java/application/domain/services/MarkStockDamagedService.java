@@ -5,7 +5,8 @@ import application.domain.models.Inventory;
 import application.domain.ports.out.InventoryRepositoryPort;
 
 /**
- * Atomic domain service responsible exclusively for marking stock as damaged in inventory.
+ * Atomic domain service responsible exclusively for marking stock as damaged (ADJUSTMENT movement).
+ * Damaged stock can never be reserved (section 11).
  */
 public class MarkStockDamagedService {
 
@@ -18,7 +19,7 @@ public class MarkStockDamagedService {
         this.inventoryRepositoryPort = inventoryRepositoryPort;
     }
 
-    public void markStockAsDamaged(String productId, String warehouseId, int quantity) {
+    public Inventory markStockAsDamaged(String productId, String warehouseId, int quantity) {
         if (productId == null || productId.trim().isEmpty()) {
             throw new IllegalArgumentException("Product ID cannot be null or empty.");
         }
@@ -29,6 +30,6 @@ public class MarkStockDamagedService {
                 .orElseThrow(() -> new EntityNotFoundException("Inventory not found for product '" + productId + "' in warehouse '" + warehouseId + "'."));
 
         inventory.markAsDamaged(quantity);
-        inventoryRepositoryPort.save(inventory);
+        return inventoryRepositoryPort.save(inventory);
     }
 }

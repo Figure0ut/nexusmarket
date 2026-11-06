@@ -1,61 +1,64 @@
 package application.infrastructure.adapters.in.rest.controllers;
 
+import application.domain.enums.UserRole;
 import application.domain.models.Invoice;
-import application.domain.services.*;
-import application.domain.valueobjects.Address;
-import application.domain.valueobjects.TaxIdentifier;
-import application.infrastructure.adapters.in.rest.dto.CreateInvoiceRequestDto;
+import application.domain.models.User;
+import application.domain.services.GetInvoiceByOrderService;
+import application.domain.services.GetInvoiceService;
+import application.domain.services.ValidateAuthorizationService;
+import application.domain.services.ValidateAuthorizationService.BusinessProcess;
 import application.infrastructure.adapters.in.rest.dto.InvoiceResponseDto;
-import org.springframework.http.HttpStatus;
+import application.infrastructure.adapters.in.rest.security.AuthenticatedUserResolver;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import static application.infrastructure.adapters.in.rest.security.AuthenticatedUserResolver.USER_EMAIL_HEADER;
+
+/**
+ * Billing (OBJ-09). Invoices are issued automatically when the payment of an order is validated;
+ * this controller only exposes consultation. The buyer consults its own invoices; the Administrator and the
+ * Supervisor consult them as administrative information.
+ */
 @RestController
 @RequestMapping("/api/invoices")
 public class InvoiceController {
 
-    private final CreateInvoiceService createInvoiceService;
     private final GetInvoiceService getInvoiceService;
-    private final MarkInvoicePaidService markInvoicePaidService;
-    private final CancelInvoiceService cancelInvoiceService;
+    private final GetInvoiceByOrderService getInvoiceByOrderService;
+    private final ValidateAuthorizationService authorization;
+    private final AuthenticatedUserResolver authenticatedUserResolver;
 
-    public InvoiceController(CreateInvoiceService createInvoiceService,
-                             GetInvoiceService getInvoiceService,
-                             MarkInvoicePaidService markInvoicePaidService,
-                             CancelInvoiceService cancelInvoiceService) {
-        this.createInvoiceService = createInvoiceService;
+    public InvoiceController(GetInvoiceService getInvoiceService,
+                             GetInvoiceByOrderService getInvoiceByOrderService,
+                             ValidateAuthorizationService authorization,
+                             AuthenticatedUserResolver authenticatedUserResolver) {
         this.getInvoiceService = getInvoiceService;
-        this.markInvoicePaidService = markInvoicePaidService;
-        this.cancelInvoiceService = cancelInvoiceService;
-    }
-
-    @PostMapping
-    public ResponseEntity<InvoiceResponseDto> createInvoice(@RequestBody CreateInvoiceRequestDto dto) {
-        Invoice invoice = createInvoiceService.createInvoice(
-                dto.getInvoiceId(),
-                dto.getOrderId(),
-                dto.getBuyerId(),
-                new TaxIdentifier(dto.getTaxIdentifier()),
-                new Address(dto.getBillingAddress())
-        );
-        return ResponseEntity.status(HttpStatus.CREATED).body(InvoiceResponseDto.fromDomain(invoice));
+        this.getInvoiceByOrderService = getInvoiceByOrderService;
+        this.authorization = authorization;
+        this.authenticatedUserResolver = authenticatedUserResolver;
     }
 
     @GetMapping("/{invoiceId}")
-    public ResponseEntity<InvoiceResponseDto> getInvoice(@PathVariable String invoiceId) {
+    public ResponseEntity<InvoiceResponseDto> getInvoice(@RequestHeader(value = USER_EMAIL_HEADER, required = false) String email, @PathVariable String invoiceId) {
+        User actor = authenticatedUserResolver.resolve(email);
         Invoice invoice = getInvoiceService.getInvoice(invoiceId);
+        authorize(actor, invoice);
         return ResponseEntity.ok(InvoiceResponseDto.fromDomain(invoice));
     }
 
-    @PutMapping("/{invoiceId}/pay")
-    public ResponseEntity<Void> markInvoicePaid(@PathVariable String invoiceId) {
-        markInvoicePaidService.markInvoicePaid(invoiceId);
-        return ResponseEntity.noContent().build();
+    @GetMapping("/order/{orderId}")
+    public ResponseEntity<InvoiceResponseDto> getInvoiceByOrder(@RequestHeader(value = USER_EMAIL_HEADER, required = false) String email, @PathVariable String orderId) {
+        User actor = authenticatedUserResolver.resolve(email);
+        Invoice invoice = getInvoiceByOrderService.getInvoiceByOrder(orderId);
+        authorize(actor, invoice);
+        return ResponseEntity.ok(InvoiceResponseDto.fromDomain(invoice));
     }
 
-    @PutMapping("/{invoiceId}/cancel")
-    public ResponseEntity<Void> cancelInvoice(@PathVariable String invoiceId) {
-        cancelInvoiceService.cancelInvoice(invoiceId);
-        return ResponseEntity.noContent().build();
+    private void authorize(User actor, Invoice invoice) {
+        if (actor.getRole() == UserRole.BUYER) {
+            authorization.validateOwnership(actor, invoice.getBuyerId());
+        } else {
+            authorization.validateQueryAuthorization(actor, BusinessProcess.ADMINISTRATIVE_REPORTS);
+        }
     }
 }

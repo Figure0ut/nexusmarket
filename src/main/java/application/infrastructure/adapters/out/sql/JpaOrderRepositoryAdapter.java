@@ -59,6 +59,11 @@ public class JpaOrderRepositoryAdapter implements OrderRepositoryPort {
     }
 
     @Override
+    public List<Order> findAllOrders() {
+        return orderJpaRepository.findAll().stream().map(this::orderToDomain).toList();
+    }
+
+    @Override
     public Order saveOrder(Order order) {
         OrderEntity entity = orderToEntity(order);
         OrderEntity saved = orderJpaRepository.save(entity);
@@ -104,6 +109,8 @@ public class JpaOrderRepositoryAdapter implements OrderRepositoryPort {
                 items.add(new OrderItem(
                         itemEntity.getProductId(),
                         itemEntity.getProductName(),
+                        itemEntity.getProductType(),
+                        itemEntity.getWarehouseId(),
                         new Money(itemEntity.getUnitPrice()),
                         itemEntity.getQuantity()
                 ));
@@ -133,6 +140,8 @@ public class JpaOrderRepositoryAdapter implements OrderRepositoryPort {
                 items.add(new OrderItemEntity(
                         item.getProductId(),
                         item.getProductName(),
+                        item.getProductType(),
+                        item.getWarehouseId(),
                         item.getUnitPrice() != null ? item.getUnitPrice().getAmount().doubleValue() : 0.0,
                         item.getQuantity()
                 ));

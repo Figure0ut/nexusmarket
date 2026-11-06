@@ -1,55 +1,31 @@
-# Inventory & Stock Allocation Atomic Domain Services Specification
+# Inventory Services Specification
 
-## 1. Context & Business Purpose
-The Inventory domain coordinates multi-warehouse stock allocation, real-time reservations, sale confirmations, damage adjustments, and movement audits (OBJ-05 & Dominio 5). Each operation is implemented as an atomic domain service.
+## 1. Business Purpose
+Domain 6: distributed inventory, always linked to one product and one warehouse.
 
----
+## 2. Atomic Services (`application.domain.services`)
 
-## 2. Package Location & Atomic Services
-- **Package**: `application.domain.services`
-- **Dependencies**: [`InventoryRepositoryPort`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/ports/out/InventoryRepositoryPort.java), [`WarehouseRepositoryPort`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/ports/out/WarehouseRepositoryPort.java)
-- **Associated Models**: [`Inventory`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/models/Inventory.java), [`Warehouse`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/models/Warehouse.java), [`StockQuantity`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/valueobjects/StockQuantity.java), [`InventoryMovementType`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/enums/InventoryMovementType.java)
+| Service | Responsibility |
+| :--- | :--- |
+| [`AddStockService`](../../../src/main/java/application/domain/services/AddStockService.java) | INFLOW movement; creates the inventory record `INV-{product}-{warehouse}` if needed. |
+| [`MarkStockDamagedService`](../../../src/main/java/application/domain/services/MarkStockDamagedService.java) | ADJUSTMENT movement: available → damaged. |
+| [`GetInventoryService`](../../../src/main/java/application/domain/services/GetInventoryService.java) | Inventory of a product in a warehouse. |
+| [`GetInventoriesByProductService`](../../../src/main/java/application/domain/services/GetInventoriesByProductService.java) | Inventory of a product in all warehouses. |
+| [`GetTotalAvailableStockService`](../../../src/main/java/application/domain/services/GetTotalAvailableStockService.java) | Total available units. |
 
-### Services
-1. **`GetInventoryService`**: Retrieves inventory by product and warehouse.
-2. **`AddStockService`**: Adds stock to active warehouse inventory (`INFLOW`).
-3. **`ReserveStockService`**: Reserves stock for pending checkout orders (`RESERVE`).
-4. **`ReleaseStockReservationService`**: Returns reserved stock to available (`RETURN`).
-5. **`ConfirmSaleStockService`**: Deducts reserved stock upon confirmed sale (`OUTFLOW_SALE`).
-6. **`MarkStockDamagedService`**: Moves stock to damaged classification (`ADJUSTMENT`).
-7. **`GetTotalAvailableStockService`**: Computes total available stock across all warehouses.
+## 3. Business Rules Enforced
 
----
+1. Movements: `INFLOW` (add), `RESERVE` (checkout), `OUTFLOW_SALE` (dispatch), `ADJUSTMENT` (damaged), `RETURN` (refund processing).
+2. Negative stock is never allowed (`StockQuantity` and `Inventory` guards).
+3. Inexistent or damaged inventory can never be reserved.
+4. Digital products have no inventory.
+5. A seller only manages stock of its own products and never in another seller's warehouse; buyers never manage inventory.
 
-## 3. Core Business Invariants & Rules
+## 4. REST Endpoints
 
-1. **Zero Negative Stock Rule**: Available, reserved, and damaged stock levels cannot be negative ($stock \ge 0$).
-2. **Active Warehouse Invariant**: Stock can only be added to or dispatched from `active` warehouses.
-3. **Movement Tracking**: Every stock mutation automatically records its corresponding `InventoryMovementType`.
-
----
-
-## 4. Method Signatures
-
-```java
-// GetInventoryService
-public Inventory getInventory(String productId, String warehouseId);
-
-// AddStockService
-public void addStock(String inventoryId, String productId, String warehouseId, int quantity);
-
-// ReserveStockService
-public void reserveStock(String productId, String warehouseId, int quantity);
-
-// ReleaseStockReservationService
-public void releaseReservation(String productId, String warehouseId, int quantity);
-
-// ConfirmSaleStockService
-public void confirmSale(String productId, String warehouseId, int quantity);
-
-// MarkStockDamagedService
-public void markStockAsDamaged(String productId, String warehouseId, int quantity);
-
-// GetTotalAvailableStockService
-public int getTotalAvailableStock(String productId);
-```
+| Method | Path | Allowed roles |
+| :--- | :--- | :--- |
+| `POST` | `/api/inventory/add` | SELLER (own products), OPERATOR_LOGISTIC |
+| `POST` | `/api/inventory/mark-damaged` | SELLER (own products), OPERATOR_LOGISTIC |
+| `GET` | `/api/inventory?productId=&warehouseId=` | SELLER (own), OPERATOR_LOGISTIC, SUPERVISOR |
+| `GET` | `/api/inventory/product/{id} · /total-available/{id}` | same |

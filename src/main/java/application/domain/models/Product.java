@@ -39,8 +39,9 @@ public class Product {
         setVariants(variants);
     }
 
-    public Product(String productId, String skuCode, String sellerId, String name, double priceValue, ProductType productType) {
-        this(productId, new SKU(skuCode), sellerId, name, "", new Money(priceValue), productType, ProductStatus.DRAFT, new ArrayList<>());
+    public Product(String productId, String skuCode, String sellerId, String name, double priceValue,
+                   ProductType productType, ProductStatus status) {
+        this(productId, new SKU(skuCode), sellerId, name, "", new Money(priceValue), productType, status, new ArrayList<>());
     }
 
     public String getProductId() {
@@ -143,9 +144,15 @@ public class Product {
         }
     }
 
+    /**
+     * Publication (section 6.1, step 4): the product becomes visible in the public catalog.
+     */
     public void publish() {
         if (status == ProductStatus.DISCONTINUED) {
             throw new IllegalStateException("Cannot publish a discontinued product.");
+        }
+        if (status == ProductStatus.PUBLISHED) {
+            throw new IllegalStateException("Product '" + productId + "' is already published.");
         }
         setStatus(ProductStatus.PUBLISHED);
     }
@@ -158,7 +165,24 @@ public class Product {
     }
 
     public void discontinue() {
+        if (status == ProductStatus.DISCONTINUED) {
+            throw new IllegalStateException("Product '" + productId + "' is already discontinued.");
+        }
         setStatus(ProductStatus.DISCONTINUED);
+    }
+
+    /**
+     * Only published products are visible in the public catalog and can be bought.
+     */
+    public boolean isPublished() {
+        return status == ProductStatus.PUBLISHED;
+    }
+
+    /**
+     * Physical products require inventory and dispatch; digital products are delivered immediately after payment.
+     */
+    public boolean isPhysical() {
+        return productType == ProductType.PHYSICAL;
     }
 
     public void updatePrice(Money newPrice) {

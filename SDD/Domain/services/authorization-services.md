@@ -1,35 +1,26 @@
-# Authorization Atomic Domain Service Specification
+# Authorization Service Specification
 
-## 1. Context & Business Purpose
-The **`ValidateAuthorizationService`** enforces platform-wide quality controls, operational role constraints, and the formal **Responsibility Matrix** (Restricciones Generales RG-01, RG-02, RG-03, and Sección 12).
+## 1. Business Purpose
+`ValidateAuthorizationService` enforces the general restrictions RG-01, RG-02, RG-03 and the Responsibility Matrix of section 12 of the functional specification.
 
----
+## 2. Atomic Services (`application.domain.services`)
 
-## 2. Package Location & Dependencies
-- **Package**: `application.domain.services`
-- **Class**: [`ValidateAuthorizationService`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/services/ValidateAuthorizationService.java)
-- **Associated Models**: [`User`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/models/User.java), [`UserRole`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/enums/UserRole.java), [`UserStatus`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/enums/UserStatus.java)
+| Service | Responsibility |
+| :--- | :--- |
+| [`ValidateAuthorizationService`](../../../src/main/java/application/domain/services/ValidateAuthorizationService.java) | Validates execution rights (`validateProcessAuthorization`), consultation rights (`validateQueryAuthorization`) and ownership (`validateOwnership`). |
 
----
+## 3. Business Rules Enforced
 
-## 3. Core Business Invariants & Rules
+1. **RG-01**: every operation requires an authenticated, `ACTIVE` actor. The REST adapter resolves the actor from the `X-User-Email` header (`AuthenticatedUserResolver`).
+2. **RG-02**: each user has exactly one role (`UserRole`). `Buyer` and `Seller` subclasses refuse any other role.
+3. **RG-03**: no participant manages information outside its role. Buyers and sellers only manage their own data (`validateOwnership`).
+4. **Responsibility Matrix (exact copy of section 12)**: `SELLER_REGISTRATION` = ADMIN; `PRODUCT_REGISTRATION` = SELLER; `INVENTORY_MANAGEMENT` = SELLER, OPERATOR_LOGISTIC; `ORDER_MANAGEMENT` = BUYER, SELLER, OPERATOR_LOGISTIC; `REFUND_MANAGEMENT` = BUYER, ADMIN.
+5. **Processes not listed in the matrix**, assigned from the participant descriptions of section 5: `WAREHOUSE_MANAGEMENT` = ADMIN ("responsible for the administration of sellers and warehouses"); `USER_ADMINISTRATION` = ADMIN; `CART_MANAGEMENT` = BUYER; `SHIPMENT_MANAGEMENT` = OPERATOR_LOGISTIC ("physical operation of warehouses and dispatches"); `ADMINISTRATIVE_REPORTS` = ADMIN, SUPERVISOR.
+6. **Supervisor** ("consultation and operational follow-up profile"): may consult any process (`validateQueryAuthorization`) but never execute operations.
+7. Authorization failures raise `AuthorizationException` → HTTP 403; missing/unknown/blocked user → HTTP 401.
 
-1. **RG-01 (Mandatory Active Authentication)**: Every operation must be executed by an authenticated, `ACTIVE` user. Blocked or unverified users are rejected.
-2. **RG-02 (Single Role Assignment)**: Each participant possesses exactly one role within the system (`BUYER`, `SELLER`, `OPERATOR_LOGISTIC`, `ADMIN`, `SUPERVISOR`).
-3. **RG-03 (Role Segregation)**: No participant may execute operations or manage data outside their assigned role boundaries.
-4. **Responsibility Matrix (Section 12)**:
-   - `SELLER_REGISTRATION`: `ADMIN`, `SUPERVISOR`.
-   - `PRODUCT_REGISTRATION`: `SELLER` only.
-   - `INVENTORY_MANAGEMENT`: `SELLER`, `OPERATOR_LOGISTIC`.
-   - `ORDER_MANAGEMENT`: `BUYER`, `SELLER`, `OPERATOR_LOGISTIC`, `SUPERVISOR`.
-   - `REFUND_MANAGEMENT`: `BUYER`, `ADMIN`, `SUPERVISOR`.
+## 4. REST Endpoints
 
----
-
-## 4. Method Signatures
-
-```java
-// ValidateAuthorizationService
-public void validateProcessAuthorization(User actor, BusinessProcess process);
-public boolean isAuthorized(User actor, BusinessProcess process);
-```
+| Method | Path | Allowed roles |
+| :--- | :--- | :--- |
+| `—` | `Used by every controller` | — |

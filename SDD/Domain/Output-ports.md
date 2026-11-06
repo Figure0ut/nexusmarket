@@ -1,90 +1,89 @@
-# Comprehensive Output Ports Specification
+# Output Ports Specification
 
-Output Ports define outbound contract interfaces in Hexagonal Architecture, located in package `application.domain.ports.out`.
+Output ports are the outbound contracts of the Hexagonal Architecture (`application.domain.ports.out`). The domain only knows these interfaces; the infrastructure provides the implementations.
 
----
+| Port | Production adapter | Storage |
+| :--- | :--- | :--- |
+| `UserRepositoryPort` | `JpaUserRepositoryAdapter` | SQL |
+| `WarehouseRepositoryPort` | `JpaWarehouseRepositoryAdapter` | SQL |
+| `InventoryRepositoryPort` | `JpaInventoryRepositoryAdapter` | SQL |
+| `OrderRepositoryPort` | `JpaOrderRepositoryAdapter` | SQL (orders + carts) |
+| `InvoiceRepositoryPort` | `JpaInvoiceRepositoryAdapter` | SQL |
+| `ShipmentRepositoryPort` | `JpaShipmentRepositoryAdapter` | SQL |
+| `ReturnRepositoryPort` | `JpaReturnRepositoryAdapter` | SQL (returns + refunds) |
+| `ProductRepositoryPort` | `MongoProductRepositoryAdapter` | MongoDB |
+| `AuditLogRepositoryPort` | `MongoAuditLogRepositoryAdapter` | MongoDB |
+| `PaymentGatewayPort` | `InMemoryPaymentGatewayAdapter` | Simulated external gateway |
+| `NotificationPort` | `InMemoryNotificationAdapter` | Simulated e-mail (log) |
 
-## Package: `application.domain.ports.out`
+Unit tests use in-memory test doubles of every repository port (`src/test/java/.../adapters/out/memory`).
 
-```
-[ Domain Services / Use Cases ] ──> ( Output Port Interface ) ──> [ Infrastructure Adapter Implementation ]
-```
+## Contract methods
 
-### 1. `UserRepositoryPort`
-- **Purpose**: Persistence interface for `User`, `Buyer`, and `Seller` models.
-- **Contract Methods**:
-  - `Optional<User> findById(String identifier)`
-  - `Optional<User> findByEmail(Email email)`
-  - `User save(User user)`
-  - `boolean existsByEmail(Email email)`
+### `AuditLogRepositoryPort`
+- `void save(AuditEntry entry)`
+- `List<AuditEntry> findAll()`
+- `List<AuditEntry> findByTargetAggregateId(String aggregateId)`
 
-### 2. `WarehouseRepositoryPort`
-- **Purpose**: Persistence interface for `Warehouse` models.
-- **Contract Methods**:
-  - `Optional<Warehouse> findById(String warehouseId)`
-  - `List<Warehouse> findByOwnerId(String ownerId)`
-  - `Warehouse save(Warehouse warehouse)`
+### `InventoryRepositoryPort`
+- `Optional<Inventory> findByProductAndWarehouse(String productId, String warehouseId)`
+- `List<Inventory> findByProductId(String productId)`
+- `List<Inventory> findByWarehouseId(String warehouseId)`
+- `List<Inventory> findAll()`
+- `Inventory save(Inventory inventory)`
 
-### 3. `ProductRepositoryPort`
-- **Purpose**: Persistence interface for `Product` catalog models.
-- **Contract Methods**:
-  - `Optional<Product> findById(String productId)`
-  - `Optional<Product> findBySku(SKU sku)`
-  - `List<Product> findBySellerId(String sellerId)`
-  - `Product save(Product product)`
+### `InvoiceRepositoryPort`
+- `Optional<Invoice> findById(String invoiceId)`
+- `Optional<Invoice> findByOrderId(String orderId)`
+- `List<Invoice> findAll()`
+- `Invoice save(Invoice invoice)`
 
-### 4. `InventoryRepositoryPort`
-- **Purpose**: Persistence interface for distributed `Inventory` models.
-- **Contract Methods**:
-  - `Optional<Inventory> findByProductAndWarehouse(String productId, String warehouseId)`
-  - `List<Inventory> findByProductId(String productId)`
-  - `Inventory save(Inventory inventory)`
+### `NotificationPort`
+- `void sendEmailNotification(Email recipient, String subject, String body)`
 
-### 5. `OrderRepositoryPort`
-- **Purpose**: Persistence interface for `Cart` and `Order` models.
-- **Contract Methods**:
-  - `Optional<Cart> findCartByBuyerId(String buyerId)`
-  - `Cart saveCart(Cart cart)`
-  - `Optional<Order> findOrderById(String orderId)`
-  - `List<Order> findOrdersByBuyerId(String buyerId)`
-  - `Order saveOrder(Order order)`
+### `OrderRepositoryPort`
+- `Optional<Cart> findCartByBuyerId(String buyerId)`
+- `Cart saveCart(Cart cart)`
+- `Optional<Order> findOrderById(String orderId)`
+- `List<Order> findOrdersByBuyerId(String buyerId)`
+- `List<Order> findAllOrders()`
+- `Order saveOrder(Order order)`
 
-### 6. `InvoiceRepositoryPort`
-- **Purpose**: Persistence interface for `Invoice` models.
-- **Contract Methods**:
-  - `Optional<Invoice> findById(String invoiceId)`
-  - `Optional<Invoice> findByOrderId(String orderId)`
-  - `Invoice save(Invoice invoice)`
+### `PaymentGatewayPort`
+- `boolean processPayment(String orderId, Money amount, String paymentToken)`
+- `boolean processRefund(String refundId, Money amount)`
 
-### 7. `ShipmentRepositoryPort`
-- **Purpose**: Persistence interface for logistics `Shipment` models.
-- **Contract Methods**:
-  - `Optional<Shipment> findById(String shipmentId)`
-  - `Optional<Shipment> findByOrderId(String orderId)`
-  - `Shipment save(Shipment shipment)`
+### `ProductRepositoryPort`
+- `Optional<Product> findById(String productId)`
+- `Optional<Product> findBySku(SKU sku)`
+- `List<Product> findBySellerId(String sellerId)`
+- `List<Product> findAll()`
+- `Product save(Product product)`
 
-### 8. `ReturnRepositoryPort`
-- **Purpose**: Persistence interface for `ReturnRequest` and `Refund` models.
-- **Contract Methods**:
-  - `Optional<ReturnRequest> findReturnById(String returnId)`
-  - `ReturnRequest saveReturn(ReturnRequest returnRequest)`
-  - `Optional<Refund> findRefundById(String refundId)`
-  - `Refund saveRefund(Refund refund)`
+### `ReturnRepositoryPort`
+- `Optional<ReturnRequest> findReturnById(String returnId)`
+- `ReturnRequest saveReturn(ReturnRequest returnRequest)`
+- `Optional<Refund> findRefundById(String refundId)`
+- `Refund saveRefund(Refund refund)`
+- `List<ReturnRequest> findAllReturns()`
+- `List<Refund> findAllRefunds()`
 
-### 9. `AuditLogRepositoryPort`
-- **Purpose**: Persistence interface for immutable administrative and operational `AuditEntry` records.
-- **Contract Methods**:
-  - `void save(AuditEntry entry)`
-  - `List<AuditEntry> findAll()`
-  - `List<AuditEntry> findByTargetAggregateId(String aggregateId)`
+### `ShipmentRepositoryPort`
+- `Optional<Shipment> findById(String shipmentId)`
+- `Optional<Shipment> findByOrderId(String orderId)`
+- `List<Shipment> findAll()`
+- `Shipment save(Shipment shipment)`
 
-### 10. `PaymentGatewayPort`
-- **Purpose**: External payment processor integration interface (Stripe, PayPal, banking rails).
-- **Contract Methods**:
-  - `boolean processPayment(String orderId, Money amount, String paymentToken)`
-  - `boolean processRefund(String refundId, Money amount)`
+### `UserRepositoryPort`
+- `Optional<User> findById(String identifier)`
+- `Optional<User> findByEmail(Email email)`
+- `User save(User user)`
+- `boolean existsByEmail(Email email)`
+- `boolean existsByIdentityDocument(String identityDocument)`
+- `List<User> findAll()`
 
-### 11. `NotificationPort`
-- **Purpose**: External communication gateway interface (Email, SMS, Push).
-- **Contract Methods**:
-  - `void sendEmailNotification(Email recipient, String subject, String body)`
+### `WarehouseRepositoryPort`
+- `Optional<Warehouse> findById(String warehouseId)`
+- `List<Warehouse> findByOwnerId(String ownerId)`
+- `List<Warehouse> findAll()`
+- `Warehouse save(Warehouse warehouse)`

@@ -10,6 +10,7 @@ import application.infrastructure.adapters.out.sql.repository.SpringDataJpaInvoi
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -30,6 +31,11 @@ public class JpaInvoiceRepositoryAdapter implements InvoiceRepositoryPort {
     @Override
     public Optional<Invoice> findByOrderId(String orderId) {
         return invoiceRepository.findByOrderId(orderId).map(this::toDomain);
+    }
+
+    @Override
+    public List<Invoice> findAll() {
+        return invoiceRepository.findAll().stream().map(this::toDomain).toList();
     }
 
     @Override
@@ -57,7 +63,7 @@ public class JpaInvoiceRepositoryAdapter implements InvoiceRepositoryPort {
         entity.setOrderId(invoice.getOrderId());
         entity.setBuyerId(invoice.getBuyerId());
         entity.setTaxIdentifier(invoice.getTaxIdentifier() != null ? invoice.getTaxIdentifier().getTaxId() : "N/A");
-        entity.setBillingAddress(invoice.getBillingAddress() != null ? invoice.getBillingAddress().toString() : "");
+        entity.setBillingAddress(invoice.getBillingAddress() != null ? invoice.getBillingAddress().getStreet() : "");
         entity.setTotalAmount(invoice.getTotalAmount() != null ? invoice.getTotalAmount().getAmount() : java.math.BigDecimal.ZERO);
         entity.setStatus(invoice.getStatus());
         return entity;

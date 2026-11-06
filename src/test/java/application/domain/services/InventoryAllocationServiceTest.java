@@ -1,108 +1,34 @@
 package application.domain.services;
 
-import application.domain.enums.WarehouseType;
+import application.domain.exceptions.EntityNotFoundException;
 import application.domain.exceptions.InvalidDomainStateException;
-import application.domain.models.Inventory;
-import application.domain.models.Warehouse;
-import application.domain.ports.out.InventoryRepositoryPort;
-import application.domain.ports.out.WarehouseRepositoryPort;
-import application.domain.valueobjects.Address;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class InventoryAllocationServiceTest {
 
-    private AddStockService addStockService;
-    private ReserveStockService reserveStockService;
-    private ReleaseStockReservationService releaseStockReservationService;
-    private ConfirmSaleStockService confirmSaleStockService;
-    private MarkStockDamagedService markStockDamagedService;
-    private GetInventoryService getInventoryService;
-    private GetTotalAvailableStockService getTotalAvailableStockService;
+    private final MarketplaceFixture f = new MarketplaceFixture().withCatalog();
 
-    private MockInventoryRepository inventoryRepository;
-    private MockWarehouseRepository warehouseRepository;
-
-    @BeforeEach
-    void setUp() {
-        inventoryRepository = new MockInventoryRepository();
-        warehouseRepository = new MockWarehouseRepository();
-
-        addStockService = new AddStockService(inventoryRepository, warehouseRepository);
-        reserveStockService = new ReserveStockService(inventoryRepository);
-        releaseStockReservationService = new ReleaseStockReservationService(inventoryRepository);
-        confirmSaleStockService = new ConfirmSaleStockService(inventoryRepository);
-        markStockDamagedService = new MarkStockDamagedService(inventoryRepository);
-        getInventoryService = new GetInventoryService(inventoryRepository);
-        getTotalAvailableStockService = new GetTotalAvailableStockService(inventoryRepository);
+    @Test
+    @DisplayName("Inventory is linked to an existing product and an existing warehouse")
+    void inventoryNeedsProductAndWarehouse() {
+        assertThrows(EntityNotFoundException.class, () -> f.addStock.addStock("P-404", "WH-SEL-1", 1));
+        assertThrows(EntityNotFoundException.class, () -> f.addStock.addStock("P-LAPTOP", "WH-404", 1));
+        assertEquals(15, f.addStock.addStock("P-LAPTOP", "WH-SEL-1", 5).getAvailableStock().getValue());
     }
 
     @Test
-    @DisplayName("Should successfully add stock, reserve, and confirm sale via atomic services")
-    void shouldManageStockOperations() {
-        Warehouse warehouse = new Warehouse("WH-1", "Central WH", new Address("St", "City", "ST", "1", "USA"), WarehouseType.MARKETPLACE, "ADM-1", true);
-        warehouseRepository.save(warehouse);
-
-        addStockService.addStock("INV-1", "P-1", "WH-1", 50);
-        assertEquals(50, getTotalAvailableStockService.getTotalAvailableStock("P-1"));
-
-        reserveStockService.reserveStock("P-1", "WH-1", 20);
-        Inventory inv = getInventoryService.getInventory("P-1", "WH-1");
-        assertEquals(30, inv.getAvailableStock().getValue());
-        assertEquals(20, inv.getReservedStock().getValue());
-
-        confirmSaleStockService.confirmSale("P-1", "WH-1", 20);
-        inv = getInventoryService.getInventory("P-1", "WH-1");
-        assertEquals(30, inv.getAvailableStock().getValue());
-        assertEquals(0, inv.getReservedStock().getValue());
-
-        markStockDamagedService.markStockAsDamaged("P-1", "WH-1", 5);
-        inv = getInventoryService.getInventory("P-1", "WH-1");
-        assertEquals(25, inv.getAvailableStock().getValue());
-        assertEquals(5, inv.getDamagedStock().getValue());
+    @DisplayName("Digital products do not have inventory")
+    void digitalProductsHaveNoInventory() {
+        assertThrows(InvalidDomainStateException.class, () -> f.addStock.addStock("P-EBOOK", "WH-SEL-1", 5));
     }
 
     @Test
-    @DisplayName("Should reject adding stock to inactive warehouse")
-    void shouldRejectInactiveWarehouse() {
-        Warehouse warehouse = new Warehouse("WH-1", "Central WH", new Address("St", "City", "ST", "1", "USA"), WarehouseType.MARKETPLACE, "ADM-1", false);
-        warehouseRepository.save(warehouse);
-
-        assertThrows(InvalidDomainStateException.class, () ->
-                addStockService.addStock("INV-1", "P-1", "WH-1", 50)
-        );
-    }
-
-    private static class MockInventoryRepository implements InventoryRepositoryPort {
-        private final Map<String, Inventory> storage = new HashMap<>();
-
-        @Override public Optional<Inventory> findByProductAndWarehouse(String productId, String warehouseId) {
-            return Optional.ofNullable(storage.get(productId + "_" + warehouseId));
-        }
-
-        @Override public List<Inventory> findByProductId(String productId) {
-            return storage.values().stream().filter(i -> i.getProductId().equals(productId)).toList();
-        }
-
-        @Override public Inventory save(Inventory inventory) {
-            storage.put(inventory.getProductId() + "_" + inventory.getWarehouseId(), inventory);
-            return inventory;
-        }
-    }
-
-    private static class MockWarehouseRepository implements WarehouseRepositoryPort {
-        private final Map<String, Warehouse> storage = new HashMap<>();
-
-        @Override public Optional<Warehouse> findById(String warehouseId) { return Optional.ofNullable(storage.get(warehouseId)); }
-        @Override public List<Warehouse> findByOwnerId(String ownerId) { return List.of(); }
-        @Override public Warehouse save(Warehouse warehouse) { storage.put(warehouse.getWarehouseId(), warehouse); return warehouse; }
+    @DisplayName("Stock cannot be added to an inactive warehouse")
+    void inactiveWarehouse() {
+        new DeactivateWarehouseService(f.warehouses).deactivateWarehouse("WH-SEL-1");
+        assertThrows(InvalidDomainStateException.class, () -> f.addStock.addStock("P-LAPTOP", "WH-SEL-1", 5));
     }
 }

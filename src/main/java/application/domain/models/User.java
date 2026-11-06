@@ -6,9 +6,17 @@ import application.domain.valueobjects.Email;
 
 import java.util.Objects;
 
+/**
+ * Marketplace user (Domain 1 - User Administration).
+ * <p>
+ * Attributes required by the specification: identifier (unique), full name (not empty),
+ * email (unique, main access and communication channel), role (exactly one per user, RG-02)
+ * and status. Section 11 additionally requires the identity document to be unique.
+ */
 public class User {
 
     private String identifier;
+    private String identityDocument;
     private String fullName;
     private Email email;
     private UserRole role;
@@ -17,16 +25,17 @@ public class User {
     public User() {
     }
 
-    public User(String identifier, String fullName, Email email, UserRole role, UserStatus status) {
+    public User(String identifier, String identityDocument, String fullName, Email email, UserRole role, UserStatus status) {
         setIdentifier(identifier);
+        setIdentityDocument(identityDocument);
         setFullName(fullName);
         setEmail(email);
         setRole(role);
         setStatus(status);
     }
 
-    public User(String identifier, String fullName, String emailStr, UserRole role, UserStatus status) {
-        this(identifier, fullName, new Email(emailStr), role, status);
+    public User(String identifier, String identityDocument, String fullName, String emailStr, UserRole role, UserStatus status) {
+        this(identifier, identityDocument, fullName, new Email(emailStr), role, status);
     }
 
     public String getIdentifier() {
@@ -38,6 +47,17 @@ public class User {
             throw new IllegalArgumentException("User identifier cannot be null or empty.");
         }
         this.identifier = identifier.trim();
+    }
+
+    public String getIdentityDocument() {
+        return identityDocument;
+    }
+
+    public void setIdentityDocument(String identityDocument) {
+        if (identityDocument == null || identityDocument.trim().isEmpty()) {
+            throw new IllegalArgumentException("Identity document cannot be null or empty.");
+        }
+        this.identityDocument = identityDocument.trim();
     }
 
     public String getFullName() {
@@ -82,6 +102,10 @@ public class User {
             throw new IllegalArgumentException("User status cannot be null.");
         }
         this.status = status;
+    }
+
+    public boolean isActive() {
+        return status == UserStatus.ACTIVE;
     }
 
     public void updateContactInfo(Email newEmail) {

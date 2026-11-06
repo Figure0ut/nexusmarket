@@ -1,47 +1,30 @@
-# Returns & Refunds Atomic Domain Services Specification
+# Returns & Refunds Services Specification
 
-## 1. Context & Business Purpose
-The Returns & Refunds domain coordinates post-sale reverse logistics, return authorization, item inspection (restock reusable items vs. mark damaged), and refund processing (OBJ-10 & Dominio 10). Each operation is implemented as an atomic domain service.
+## 1. Business Purpose
+OBJ-11: returns and refunds. Matrix "Refund management": Buyer and Administrator.
 
----
+## 2. Atomic Services (`application.domain.services`)
 
-## 2. Package Location & Atomic Services
-- **Package**: `application.domain.services`
-- **Dependencies**: [`ReturnRepositoryPort`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/ports/out/ReturnRepositoryPort.java), [`OrderRepositoryPort`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/ports/out/OrderRepositoryPort.java), [`InventoryRepositoryPort`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/ports/out/InventoryRepositoryPort.java), [`PaymentGatewayPort`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/ports/out/PaymentGatewayPort.java)
-- **Associated Models**: [`ReturnRequest`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/models/ReturnRequest.java), [`Refund`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/models/Refund.java), [`Order`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/models/Order.java), [`Inventory`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/models/Inventory.java)
+| Service | Responsibility |
+| :--- | :--- |
+| [`RequestReturnService`](../../../src/main/java/application/domain/services/RequestReturnService.java) | The buyer requests the return of a product of its DELIVERED_FINALIZED order (`REQUESTED`). |
+| [`ApproveReturnService`](../../../src/main/java/application/domain/services/ApproveReturnService.java) | `REQUESTED` → `APPROVED`. |
+| [`RejectReturnService`](../../../src/main/java/application/domain/services/RejectReturnService.java) | `REQUESTED` → `REJECTED`. |
+| [`ProcessReturnAndRefundService`](../../../src/main/java/application/domain/services/ProcessReturnAndRefundService.java) | `APPROVED` → `ITEM_RECEIVED`; RETURN movement in the original warehouse (reusable → available, otherwise damaged); refunds the amount paid for that line. |
+| [`GetReturnRequestService`](../../../src/main/java/application/domain/services/GetReturnRequestService.java) | Queries a return. |
 
-### Services
-1. **`RequestReturnService`**: Initiates a return request on a delivered and finalized order.
-2. **`GetReturnRequestService`**: Retrieves a return request by its identifier.
-3. **`ApproveReturnService`**: Approves a requested return.
-4. **`RejectReturnService`**: Rejects a requested return.
-5. **`ProcessReturnAndRefundService`**: Receives returned item, restocks or marks damaged, and executes financial refund via payment gateway.
+## 3. Business Rules Enforced
 
----
+1. The finalized order is never modified; the return is an independent aggregate.
+2. The product must belong to the order and the order to the buyer.
+3. The refunded amount is calculated, never typed by the client.
+4. Only one active return per order line.
 
-## 3. Core Business Invariants & Rules
+## 4. REST Endpoints
 
-1. **Delivered Status Prerequisite**: Returns can only be requested for orders in `DELIVERED_FINALIZED` status.
-2. **Approval Requirement**: Items can only be received and refunded after return request approval.
-3. **Inventory Condition Sync**: Reusable items increment available stock (`addStock`), while defective items increment damaged stock (`markAsDamaged`).
-
----
-
-## 4. Method Signatures
-
-```java
-// RequestReturnService
-public ReturnRequest requestReturn(String returnId, String orderId, String buyerId, String productId, ReturnReason reason);
-
-// GetReturnRequestService
-public ReturnRequest getReturnRequest(String returnId);
-
-// ApproveReturnService
-public void approveReturn(String returnId);
-
-// RejectReturnService
-public void rejectReturn(String returnId);
-
-// ProcessReturnAndRefundService
-public Refund processReturnedItemAndRefund(String refundId, String returnId, String warehouseId, boolean isReusable, Money refundAmount);
-```
+| Method | Path | Allowed roles |
+| :--- | :--- | :--- |
+| `POST` | `/api/returns/request` | the buyer owner |
+| `PUT` | `/api/returns/{id}/approve · /reject` | ADMIN |
+| `POST` | `/api/returns/process-refund` | ADMIN |
+| `GET` | `/api/returns/{id}` | buyer owner, ADMIN, SUPERVISOR |

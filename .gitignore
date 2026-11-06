@@ -68,3 +68,6 @@ Thumbs.db
 *.swo
 .env
 .env.local
+
+# Personal study guide (not part of the deliverable)
+GUIA_SUSTENTACION.md

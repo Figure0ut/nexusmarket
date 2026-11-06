@@ -10,5 +10,6 @@ public interface ProductRepositoryPort {
     Optional<Product> findById(String productId);
     Optional<Product> findBySku(SKU sku);
     List<Product> findBySellerId(String sellerId);
+    List<Product> findAll();
     Product save(Product product);
 }

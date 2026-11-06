@@ -11,6 +11,7 @@ import application.infrastructure.adapters.out.sql.repository.SpringDataJpaRetur
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -48,6 +49,16 @@ public class JpaReturnRepositoryAdapter implements ReturnRepositoryPort {
         RefundEntity entity = toEntity(refund);
         RefundEntity saved = refundRepository.save(entity);
         return toDomain(saved);
+    }
+
+    @Override
+    public List<ReturnRequest> findAllReturns() {
+        return returnRepository.findAll().stream().map(this::toDomain).toList();
+    }
+
+    @Override
+    public List<Refund> findAllRefunds() {
+        return refundRepository.findAll().stream().map(this::toDomain).toList();
     }
 
     private ReturnRequest toDomain(ReturnRequestEntity entity) {

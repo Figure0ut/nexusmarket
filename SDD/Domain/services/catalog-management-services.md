@@ -1,55 +1,33 @@
-# Catalog Management Atomic Domain Services Specification
+# Catalog Management Services Specification
 
-## 1. Context & Business Purpose
-The Catalog Management domain governs product registration, validation, price updates, variants, and catalog lifecycle states (`DRAFT`, `PUBLISHED`, `SUSPENDED`, `DISCONTINUED`). Each operation is implemented as an atomic domain service.
+## 1. Business Purpose
+Domain 5: product catalog. Products are physical (require inventory and dispatch) or digital (immediate delivery after payment).
 
----
+## 2. Atomic Services (`application.domain.services`)
 
-## 2. Package Location & Atomic Services
-- **Package**: `application.domain.services`
-- **Dependencies**: [`ProductRepositoryPort`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/ports/out/ProductRepositoryPort.java)
-- **Associated Models**: [`Product`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/models/Product.java), [`SKU`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/valueobjects/SKU.java), [`Money`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/valueobjects/Money.java), [`ProductVariant`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/valueobjects/ProductVariant.java)
+| Service | Responsibility |
+| :--- | :--- |
+| [`RegisterProductService`](../../../src/main/java/application/domain/services/RegisterProductService.java) | Registers a product with unique ID and SKU. |
+| [`GetProductService`](../../../src/main/java/application/domain/services/GetProductService.java) | Queries a product. |
+| [`GetPublishedCatalogService`](../../../src/main/java/application/domain/services/GetPublishedCatalogService.java) | Public catalog: PUBLISHED products only. |
+| [`PublishProductService`](../../../src/main/java/application/domain/services/PublishProductService.java) | → `PUBLISHED`. |
+| [`SuspendProductService`](../../../src/main/java/application/domain/services/SuspendProductService.java) | `PUBLISHED` → `SUSPENDED`. |
+| [`DiscontinueProductService`](../../../src/main/java/application/domain/services/DiscontinueProductService.java) | → `DISCONTINUED` (final). |
+| [`UpdateProductPriceService`](../../../src/main/java/application/domain/services/UpdateProductPriceService.java) | Updates the price (> 0). |
+| [`AddProductVariantService`](../../../src/main/java/application/domain/services/AddProductVariantService.java) | Adds a variant (color, size, model...). |
 
-### Services
-1. **`RegisterProductService`**: Enforces SKU and product ID uniqueness on registration.
-2. **`GetProductService`**: Retrieves a product by ID.
-3. **`PublishProductService`**: Transitions a product to `PUBLISHED`.
-4. **`SuspendProductService`**: Transitions a product to `SUSPENDED`.
-5. **`DiscontinueProductService`**: Transitions a product to `DISCONTINUED`.
-6. **`UpdateProductPriceService`**: Updates the product unit price ($price > 0$).
-7. **`AddProductVariantService`**: Adds a new product variant.
+## 3. Business Rules Enforced
 
----
+1. Product type: `PHYSICAL` or `DIGITAL`. Status: exactly `PUBLISHED`, `SUSPENDED`, `DISCONTINUED` (selection made by the seller on registration).
+2. Only PUBLISHED products are visible in the public catalog and can be added to a cart (section 6.1, step 4).
+3. Only the owning seller registers and administers its products (matrix: "Product registration: Seller").
 
-## 3. Core Business Invariants & Rules
+## 4. REST Endpoints
 
-1. **SKU Uniqueness**: Every product must possess a globally unique SKU.
-2. **Positive Pricing**: Prices must always be strictly greater than zero ($price > 0$).
-3. **Valid State Transitions**: A product cannot be modified once `DISCONTINUED`.
-
----
-
-## 4. Method Signatures
-
-```java
-// RegisterProductService
-public Product registerProduct(Product product);
-
-// GetProductService
-public Product getProduct(String productId);
-
-// PublishProductService
-public void publishProduct(String productId);
-
-// SuspendProductService
-public void suspendProduct(String productId);
-
-// DiscontinueProductService
-public void discontinueProduct(String productId);
-
-// UpdateProductPriceService
-public void updatePrice(String productId, Money newPrice);
-
-// AddProductVariantService
-public void addVariant(String productId, ProductVariant variant);
-```
+| Method | Path | Allowed roles |
+| :--- | :--- | :--- |
+| `POST` | `/api/products` | SELLER |
+| `GET` | `/api/products` | any authenticated user (public catalog) |
+| `GET` | `/api/products/{id}` | any (non-published: owner seller / SUPERVISOR) |
+| `PUT` | `/api/products/{id}/publish · /suspend · /discontinue · /price` | owner SELLER |
+| `POST` | `/api/products/{id}/variants` | owner SELLER |

@@ -9,6 +9,7 @@ import java.util.List;
 public class CartResponseDto {
     private String cartId;
     private String buyerId;
+    private String status;
     private List<CartItemResponseDto> items = new ArrayList<>();
     private double total;
 
@@ -19,6 +20,7 @@ public class CartResponseDto {
         CartResponseDto dto = new CartResponseDto();
         dto.setCartId(cart.getCartId());
         dto.setBuyerId(cart.getBuyerId());
+        dto.setStatus(cart.getStatus().name());
         dto.setTotal(cart.calculateTotal() != null ? cart.calculateTotal().getAmount().doubleValue() : 0.0);
 
         if (cart.getItems() != null) {
@@ -37,6 +39,8 @@ public class CartResponseDto {
     public String getCartId() { return cartId; }
     public void setCartId(String cartId) { this.cartId = cartId; }
 
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
     public String getBuyerId() { return buyerId; }
     public void setBuyerId(String buyerId) { this.buyerId = buyerId; }
 

@@ -11,38 +11,34 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class SellerTest {
 
-    @Test
-    @DisplayName("Should create Seller in PENDING_INCORPORATION status by default")
-    void shouldCreateSellerWithPendingStatus() {
-        Seller seller = new Seller("SEL-101", "Sarah Seller", "sarah@nexusmarket.com");
+    private Seller seller() {
+        return new Seller("SEL-101", "NIT-101", "Sarah Seller", "sarah@nexusmarket.com", "TAX-101", "Sarah Corp");
+    }
 
-        assertEquals("SEL-101", seller.getIdentifier());
+    @Test
+    @DisplayName("A new seller is pending incorporation")
+    void newSellerIsPending() {
+        Seller seller = seller();
         assertEquals(UserRole.SELLER, seller.getRole());
         assertEquals(UserStatus.PENDING_INCORPORATION, seller.getStatus());
     }
 
     @Test
-    @DisplayName("Should allow incorporation when authorized by ADMIN user")
-    void shouldIncorporateSellerWhenAuthorizedByAdmin() {
-        Seller seller = new Seller("SEL-101", "Sarah Seller", "sarah@nexusmarket.com");
-        User admin = new User("ADM-001", "Admin User", "admin@nexusmarket.com", UserRole.ADMIN, UserStatus.ACTIVE);
-
+    @DisplayName("An ACTIVE administrator incorporates the seller")
+    void adminIncorporatesSeller() {
+        Seller seller = seller();
+        User admin = new User("ADM-001", "CC-1", "Admin", "admin@nexusmarket.com", UserRole.ADMIN, UserStatus.ACTIVE);
         seller.incorporate(admin);
-
         assertEquals(UserStatus.ACTIVE, seller.getStatus());
+        assertThrows(IllegalStateException.class, () -> seller.incorporate(admin));
     }
 
     @Test
-    @DisplayName("Should throw IllegalStateException when non-admin user attempts incorporation")
-    void shouldRejectIncorporationByNonAdminUser() {
-        Seller seller = new Seller("SEL-101", "Sarah Seller", "sarah@nexusmarket.com");
-        User operator = new User("OP-001", "Operator User", "op@nexusmarket.com", UserRole.OPERATOR_LOGISTIC, UserStatus.ACTIVE);
-
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () ->
-                seller.incorporate(operator)
-        );
-
-        assertTrue(exception.getMessage().contains("is not authorized to incorporate sellers"));
-        assertEquals(UserStatus.PENDING_INCORPORATION, seller.getStatus());
+    @DisplayName("Only an administrator can incorporate sellers (sellers cannot self-register)")
+    void nonAdminCannotIncorporate() {
+        Seller seller = seller();
+        User operator = new User("OP-001", "CC-2", "Operator", "op@nexusmarket.com", UserRole.OPERATOR_LOGISTIC, UserStatus.ACTIVE);
+        assertThrows(IllegalStateException.class, () -> seller.incorporate(operator));
+        assertThrows(IllegalStateException.class, () -> seller.incorporate(seller));
     }
 }

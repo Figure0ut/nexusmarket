@@ -88,6 +88,10 @@ public class Inventory {
         return damagedStock;
     }
 
+    public int getDamagedStockValue() {
+        return damagedStock.getValue();
+    }
+
     public void setDamagedStock(StockQuantity damagedStock) {
         this.damagedStock = damagedStock != null ? damagedStock : StockQuantity.zero();
     }
@@ -111,6 +115,9 @@ public class Inventory {
      * @param quantity the number of units to add
      */
     public void addStock(int quantity) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("Inflow quantity must be greater than zero.");
+        }
         this.availableStock = this.availableStock.add(quantity);
         this.lastMovementType = InventoryMovementType.INFLOW;
     }
@@ -122,6 +129,9 @@ public class Inventory {
      * @throws IllegalStateException if insufficient available stock
      */
     public void reserveStock(int quantity) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("Reserved quantity must be greater than zero.");
+        }
         if (this.availableStock.getValue() < quantity) {
             throw new IllegalStateException("Stock Reservation Failure: Product '" + productId +
                     "' in Warehouse '" + warehouseId + "' has insufficient available stock (" +
@@ -139,6 +149,9 @@ public class Inventory {
      * @throws IllegalStateException if reserved stock is insufficient
      */
     public void confirmSale(int quantity) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("Sale quantity must be greater than zero.");
+        }
         if (this.reservedStock.getValue() < quantity) {
             throw new IllegalStateException("Sale Confirmation Failure: Reserved stock (" +
                     reservedStock.getValue() + ") is less than sale quantity (" + quantity + ").");
@@ -148,27 +161,39 @@ public class Inventory {
     }
 
     /**
-     * Releases a reservation, returning stock to available (RETURN movement).
+     * Registers returned units coming from a customer return (RETURN movement).
+     * Reusable units go back to available stock; non-reusable units are kept as damaged stock,
+     * which can never be reserved.
      *
-     * @param quantity the number of units to release
-     * @throws IllegalStateException if reserved stock is insufficient
+     * @param quantity the number of units returned
+     * @param reusable whether the returned units can be sold again
      */
-    public void releaseReservation(int quantity) {
-        if (this.reservedStock.getValue() < quantity) {
-            throw new IllegalStateException("Reservation Release Failure: Reserved stock (" +
-                    reservedStock.getValue() + ") is less than release quantity (" + quantity + ").");
+    public void registerReturn(int quantity, boolean reusable) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("Returned quantity must be greater than zero.");
         }
-        this.reservedStock = this.reservedStock.subtract(quantity);
-        this.availableStock = this.availableStock.add(quantity);
+        if (reusable) {
+            this.availableStock = this.availableStock.add(quantity);
+        } else {
+            this.damagedStock = this.damagedStock.add(quantity);
+        }
         this.lastMovementType = InventoryMovementType.RETURN;
     }
 
     /**
      * Marks available stock as damaged (ADJUSTMENT movement).
+     * Damaged stock can never be reserved (section 11) and stock can never become negative (Domain 6).
      *
      * @param quantity the number of units to mark as damaged
      */
     public void markAsDamaged(int quantity) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("Damaged quantity must be greater than zero.");
+        }
+        if (this.availableStock.getValue() < quantity) {
+            throw new IllegalStateException("Adjustment Failure: available stock (" + availableStock.getValue() +
+                    ") is less than the quantity to mark as damaged (" + quantity + "). Negative stock is not allowed.");
+        }
         this.availableStock = this.availableStock.subtract(quantity);
         this.damagedStock = this.damagedStock.add(quantity);
         this.lastMovementType = InventoryMovementType.ADJUSTMENT;

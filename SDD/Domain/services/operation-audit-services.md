@@ -1,38 +1,25 @@
-# Operation Audit Atomic Domain Services Specification
+# Audit & Administrative Reports Services Specification
 
-## 1. Context & Business Purpose
-The Operation Audit domain records an append-only audit trail for administrative actions, security transitions, and operational traceability (OBJ-12 & Dominio 12). Each operation is implemented as an atomic domain service.
+## 1. Business Purpose
+Traceability (section 1) and OBJ-12 "Consolidate administrative information for consultation".
 
----
+## 2. Atomic Services (`application.domain.services`)
 
-## 2. Package Location & Atomic Services
-- **Package**: `application.domain.services`
-- **Dependencies**: [`AuditLogRepositoryPort`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/ports/out/AuditLogRepositoryPort.java)
-- **Associated Models**: [`AuditEntry`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/models/AuditEntry.java), [`UserRole`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/enums/UserRole.java)
+| Service | Responsibility |
+| :--- | :--- |
+| [`LogOperationService`](../../../src/main/java/application/domain/services/LogOperationService.java) | Records an `AuditEntry` (stored in MongoDB). Called by `AuditTrail` after every successful state-changing request. |
+| [`GetAllAuditLogsService`](../../../src/main/java/application/domain/services/GetAllAuditLogsService.java) | Lists the audit trail. |
+| [`GetAuditLogsByAggregateService`](../../../src/main/java/application/domain/services/GetAuditLogsByAggregateService.java) | Audit trail of one aggregate (order, product...). |
+| [`GenerateAdministrativeReportService`](../../../src/main/java/application/domain/services/GenerateAdministrativeReportService.java) | Consolidated report: users by role/status, warehouses by type, products by status/type, stock totals, orders by status, total sales, invoices, shipments, returns and refunded amount. |
 
-### Services
-1. **`LogOperationService`**: Records an immutable audit log entry.
-2. **`GetAllAuditLogsService`**: Retrieves all audit logs recorded in the system.
-3. **`GetAuditLogsByAggregateService`**: Retrieves audit logs for a specific target aggregate.
+## 3. Business Rules Enforced
 
----
+1. Reports and audit are consulted by the Administrator and the Supervisor only.
 
-## 3. Core Business Invariants & Rules
+## 4. REST Endpoints
 
-1. **Append-Only Immutability**: Audit entries are strictly append-only; modification or deletion is disallowed.
-2. **Actor Traceability**: Every audit entry records the actor ID and their active role at the time of operation.
-
----
-
-## 4. Method Signatures
-
-```java
-// LogOperationService
-public void logOperation(String entryId, String actorId, UserRole role, String action, String targetAggregateId, String details);
-
-// GetAllAuditLogsService
-public List<AuditEntry> getAllLogs();
-
-// GetAuditLogsByAggregateService
-public List<AuditEntry> getLogsForAggregate(String aggregateId);
-```
+| Method | Path | Allowed roles |
+| :--- | :--- | :--- |
+| `GET` | `/api/reports/summary` | ADMIN, SUPERVISOR |
+| `GET` | `/api/audit` | ADMIN, SUPERVISOR |
+| `GET` | `/api/audit/aggregate/{id}` | ADMIN, SUPERVISOR |

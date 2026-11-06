@@ -1,47 +1,28 @@
-# Logistics & Dispatch Atomic Domain Services Specification
+# Logistics Services Specification
 
-## 1. Context & Business Purpose
-The Logistics & Dispatch domain manages warehouse package preparation, carrier dispatch with tracking numbers, delivery confirmation, and failed delivery handling (OBJ-08 & Dominio 8). Each operation is implemented as an atomic domain service.
+## 1. Business Purpose
+OBJ-10: packing, dispatch and transport of physical products (section 6.1, steps 7 and 8).
 
----
+## 2. Atomic Services (`application.domain.services`)
 
-## 2. Package Location & Atomic Services
-- **Package**: `application.domain.services`
-- **Dependencies**: [`ShipmentRepositoryPort`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/ports/out/ShipmentRepositoryPort.java), [`OrderRepositoryPort`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/ports/out/OrderRepositoryPort.java), [`WarehouseRepositoryPort`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/ports/out/WarehouseRepositoryPort.java)
-- **Associated Models**: [`Shipment`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/models/Shipment.java), [`Order`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/models/Order.java), [`Warehouse`](file:///Users/pablo/Documents/Uni/nexusmarket/src/main/java/application/domain/models/Warehouse.java)
+| Service | Responsibility |
+| :--- | :--- |
+| [`PrepareShipmentService`](../../../src/main/java/application/domain/services/PrepareShipmentService.java) | Creates the shipment (`PREPARING`) of a PAID order with physical items, from the warehouse where stock was reserved, to the order shipping address. |
+| [`DispatchShipmentService`](../../../src/main/java/application/domain/services/DispatchShipmentService.java) | `PREPARING` → `IN_TRANSIT`; order PAID → DISPATCHED; registers OUTFLOW_SALE for every physical item. |
+| [`ConfirmDeliveryService`](../../../src/main/java/application/domain/services/ConfirmDeliveryService.java) | `IN_TRANSIT` → `DELIVERED`; order → DELIVERED_FINALIZED. |
+| [`GetShipmentService`](../../../src/main/java/application/domain/services/GetShipmentService.java) | Queries a shipment. |
 
-### Services
-1. **`PrepareShipmentService`**: Creates a shipment record for paid orders dispatched from active warehouses.
-2. **`GetShipmentService`**: Retrieves a shipment by its identifier.
-3. **`DispatchShipmentService`**: Assigns carrier, tracking code, and marks order `DISPATCHED`.
-4. **`ConfirmDeliveryService`**: Finalizes shipment delivery and transitions order to `DELIVERED_FINALIZED`.
-5. **`ReportFailedDeliveryService`**: Records failed delivery status on a shipment.
+## 3. Business Rules Enforced
 
----
+1. Shipments only exist for physical products.
+2. One shipment per order.
+3. Executed by the Logistics Operator.
 
-## 3. Core Business Invariants & Rules
+## 4. REST Endpoints
 
-1. **Paid Order Prerequisite**: Shipments can only be prepared for orders in `PAID` status.
-2. **Active Warehouse Invariant**: Shipments must originate from active storage facilities.
-3. **Shipment Lifecycle**: `PREPARING` -> `IN_TRANSIT` -> `DELIVERED` or `FAILED`.
-
----
-
-## 4. Method Signatures
-
-```java
-// PrepareShipmentService
-public Shipment prepareShipment(String shipmentId, String orderId, String warehouseId, Address destinationAddress);
-
-// GetShipmentService
-public Shipment getShipment(String shipmentId);
-
-// DispatchShipmentService
-public void dispatchShipment(String shipmentId, String carrier, String trackingNumber);
-
-// ConfirmDeliveryService
-public void confirmDelivery(String shipmentId);
-
-// ReportFailedDeliveryService
-public void reportFailedDelivery(String shipmentId);
-```
+| Method | Path | Allowed roles |
+| :--- | :--- | :--- |
+| `POST` | `/api/shipments/prepare` | OPERATOR_LOGISTIC |
+| `PUT` | `/api/shipments/{id}/dispatch` | OPERATOR_LOGISTIC |
+| `PUT` | `/api/shipments/{id}/confirm-delivery` | OPERATOR_LOGISTIC |
+| `GET` | `/api/shipments/{id}` | OPERATOR_LOGISTIC, SUPERVISOR, buyer owner |
